@@ -342,7 +342,7 @@ body::before{
 .card.question .circle{
   width: min(96vmin, 900px) !important;
   height: min(96vmin, 900px) !important;
-  padding: 44px !important;
+  padding: 25px !important;
   box-sizing: border-box;
 }
 
