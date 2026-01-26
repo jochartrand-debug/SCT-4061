@@ -198,11 +198,12 @@ body::before{
 
 /* Cercle plus grand + un peu de padding pour éviter le débordement */
 .circle{
-  width: min(90vmin, 760px) !important;
-  height: min(90vmin, 760px) !important;
+  width: min(85vmin, 700px) !important;
+  height: min(85vmin, 700px) !important;
   box-sizing: border-box;
   padding: 28px;
 }
+
 
 /* === Correctifs v8 === */
 /* Tuiles réponses: fond blanc */
