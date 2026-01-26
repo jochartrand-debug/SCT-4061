@@ -1,3 +1,5 @@
+let tapLocked = false;
+
 // Unités de mesure — Q/R
 // - Questions au hasard (deck) ; épuisement ; retour accueil
 // - A × B : seul A et B en gras (× non gras)
@@ -45,6 +47,12 @@ const DATA = [
     "q1": "Watt x heure",
     "q2": "",
     "a1": "Wh",
+    "a2_html": ""
+  },
+{
+    "q1": "Ampère x heure",
+    "q2": "",
+    "a1": "Ah",
     "a2_html": ""
   },
   {
@@ -181,25 +189,34 @@ function render(){
 }
 
 async function handleTap(){
-  if (state.mode === "home") {
-    startSession();
+  if (tapLocked) return;
+  tapLocked = true;
+
+  try {
+    if (state.mode === "home"){
+      startSession();
+      state.mode = "question";
+      render();
+      return;
+    }
+
+    if (state.mode === "question"){
+      await playTransitionQA();
+      state.mode = "answer";
+      render();
+      return;
+    }
+
+    const nxt = nextIndex();
+    if (nxt === null) return;
     state.mode = "question";
     render();
-    return;
-  }
 
-  if (state.mode === "question") {
-    await playTransitionQA();
-    state.mode = "answer";
-    render();
-    return;
+  } finally {
+    setTimeout(() => {
+      tapLocked = false;
+    }, 250);
   }
-
-  // answer -> next question (aucune transition)
-  const nxt = nextIndex();
-  if (nxt === null) return;
-  state.mode = "question";
-  render();
 }
 
 card.addEventListener("pointerup", (e) => {
