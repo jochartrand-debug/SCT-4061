@@ -174,11 +174,10 @@ body::before{
   color:#fff;
 }
 
+/* --- Cercle légèrement plus grand --- */
 .circle{
-  width: min(81vmin, 684px) !important;
-  height: min(81vmin, 684px) !important;
-  box-sizing: border-box;
-  padding: 28px;
+  width: min(82vmin, 700px);
+  height: min(82vmin, 700px);
 }
 
 /* Deuxième ligne: pas en gras */
@@ -197,13 +196,13 @@ body::before{
 /* Opérateur de multiplication dans les questions: non gras */
 .mult{ font-weight:400 !important; }
 
+/* Cercle plus grand + un peu de padding pour éviter le débordement */
 .circle{
-  width: min(81vmin, 684px) !important;
-  height: min(81vmin, 684px) !important;
+  width: min(90vmin, 760px) !important;
+  height: min(90vmin, 760px) !important;
   box-sizing: border-box;
   padding: 28px;
 }
-
 
 /* === Correctifs v8 === */
 /* Tuiles réponses: fond blanc */
@@ -232,11 +231,12 @@ body::before{
 /* Deuxième ligne question jamais en gras */
 .q-line2{ font-weight: 400 !important; }
 
+/* Cercle: assez grand pour contenir le texte */
 .circle{
-  width: min(81vmin, 684px) !important;
-  height: min(81vmin, 684px) !important;
-  box-sizing: border-box;
+  width: min(92vmin, 820px) !important;
+  height: min(92vmin, 820px) !important;
   padding: 28px;
+  box-sizing: border-box;
 }
 
 /* === Correctifs v13 === */
@@ -340,8 +340,8 @@ body::before{
 /* === Correctifs v17 === */
 /* Cercle questions : plus d'espace intérieur pour éviter que le texte touche le cercle */
 .card.question .circle{
-  width: min(81vmin, 684px) !important;
-  height: min(81vmin, 684px) !important;
+  width: min(96vmin, 900px) !important;
+  height: min(96vmin, 900px) !important;
   padding: 44px !important;
   box-sizing: border-box;
 }
