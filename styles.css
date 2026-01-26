@@ -394,4 +394,12 @@ body{
   box-sizing: border-box;
 }
 
+/* === Ajustement cercle QUESTIONS (plus petit) === */
+.card.question .circle{
+  width: min(92vmin, 860px) !important;
+  height: min(92vmin, 860px) !important;
+  padding: 18px !important; /* garde un peu d'air sans trop agrandir */
+  box-sizing: border-box;
+}
+
 
