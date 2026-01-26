@@ -379,3 +379,19 @@ body::before{
   width: 100%;
 }
 
+html, body{
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.card{
+  width: 100%;
+}
+
+body{
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  box-sizing: border-box;
+}
+
+
