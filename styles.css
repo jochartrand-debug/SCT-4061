@@ -82,6 +82,8 @@ body{
   border-radius: 50%;
   display: grid;
   place-items: center;
+  box-sizing: border-box;
+  padding: clamp(18px, 3.5vmin, 34px);
   overflow: hidden;
 }
 
@@ -102,8 +104,8 @@ body{
 .content{
   text-align:center;
   width: 100%;
-  max-width: 100%;
-  max-height: 100%;
+  box-sizing: border-box;
+  padding: 0 0.35em;
 }
 
 .q-line1, .a-line1{
@@ -111,6 +113,9 @@ body{
   font-size: clamp(64px, 10vw, 140px);
   font-weight: 750;
   line-height: 1.05;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 0.2em;
 }
 
 .q-line2, .a-line2{
@@ -118,6 +123,9 @@ body{
   font-size: clamp(40px, 6vw, 80px);
   opacity: 0.9;
   line-height: 1.1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 0.2em;
 }
 
 .italic{ font-style: italic; }
@@ -406,12 +414,3 @@ body{
 }
 
 
-
-
-/* === Robustesse multi-écrans : les lignes prennent toute la largeur disponible === */
-.content{ box-sizing: border-box; }
-.q-line1,.q-line2,.a-line1,.a-line2{
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-}

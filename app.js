@@ -98,15 +98,6 @@ async function playTransitionQA(){
   document.body.classList.remove("flash-answer");
 }
 
-// Refit sur changements de taille (orientation / autres écrans)
-window.addEventListener("resize", () => requestAnimationFrame(fitTextToCircle));
-if (window.visualViewport){
-  window.visualViewport.addEventListener("resize", () => requestAnimationFrame(fitTextToCircle));
-}
-if (document.fonts && document.fonts.ready){
-  document.fonts.ready.then(() => requestAnimationFrame(fitTextToCircle)).catch(()=>{});
-}
-
 function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -175,47 +166,41 @@ function fitTextToCircle(){
   const content = document.getElementById("content");
   if (!circle || !content) return;
 
-  // Espace disponible (on enlève le padding réel du cercle)
+  // Available inner box of the circle (minus padding)
   const cs = getComputedStyle(circle);
-  const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-  const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  let availW = circle.clientWidth - padX;
+  let availH = circle.clientHeight - padY;
 
-  const availW = Math.max(0, circle.clientWidth - padX);
-  const availH = Math.max(0, circle.clientHeight - padY);
+  // Safety margin so glyphs don't get clipped by the circle edge
+  availW = Math.max(0, availW * 0.92);
+  availH = Math.max(0, availH * 0.92);
 
-  // Contraint le bloc au "vrai" espace intérieur
-  content.style.maxWidth = availW ? `${availW}px` : "";
-  content.style.maxHeight = availH ? `${availH}px` : "";
+  // Make content take the measured box so scrollWidth/clientWidth are meaningful
+  content.style.maxWidth = Math.floor(availW) + "px";
+  content.style.maxHeight = Math.floor(availH) + "px";
 
-  const lines = Array.from(content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2"));
-  if (!lines.length) return;
-
-  // Reset: repartir des tailles CSS
+  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
+  // Reset to CSS sizes
   lines.forEach(el => { el.style.fontSize = ""; });
 
-  const minPx = 14;
-
-  // Réduit progressivement jusqu'à ce que TOUT rentre:
-  // - aucune ligne ne déborde horizontalement (scrollWidth <= clientWidth)
-  // - le bloc ne déborde pas verticalement (scrollHeight <= availH)
-  let k = 0;
-  while (k < 60) {
-    const tooTall = availH > 0 && content.scrollHeight > availH + 0.5;
-
-    let tooWide = false;
+  const isOverflowing = () => {
+    if (content.scrollHeight > availH + 0.5) return true;
     for (const el of lines) {
-      // clientWidth = largeur réellement disponible (grâce au CSS width:100%)
-      if (el.scrollWidth > el.clientWidth + 0.5) { tooWide = true; break; }
+      // +0.5 avoids false positives from subpixel rounding
+      if (el.scrollWidth > el.clientWidth + 0.5) return true;
     }
+    return false;
+  };
 
-    if (!tooWide && !tooTall) break;
-
+  let k = 0;
+  while (k < 40 && isOverflowing()) {
     lines.forEach(el => {
-      const fs = parseFloat(getComputedStyle(el).fontSize) || 0;
-      const next = Math.max(minPx, fs * 0.94);
-      el.style.fontSize = `${next}px`;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      const next = Math.max(16, fs * 0.94);
+      el.style.fontSize = next + "px";
     });
-
     k++;
   }
 }
@@ -277,6 +262,17 @@ async function handleTap(){
     setTimeout(() => {
       tapLocked = false;
     }, 250);
+  }
+}
+
+
+if (typeof window !== "undefined") {
+  window.addEventListener("resize", () => requestAnimationFrame(fitTextToCircle), { passive: true });
+  window.addEventListener("orientationchange", () => requestAnimationFrame(fitTextToCircle), { passive: true });
+
+  // When fonts finish loading, refit (important on iOS)
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => requestAnimationFrame(fitTextToCircle)).catch(() => {});
   }
 }
 
