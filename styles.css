@@ -82,6 +82,7 @@ body{
   border-radius: 50%;
   display: grid;
   place-items: center;
+  overflow: hidden;
 }
 
 /* Cercle blanc seulement pour la QUESTION */
@@ -101,6 +102,8 @@ body{
 .content{
   text-align:center;
   width: 100%;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .q-line1, .a-line1{

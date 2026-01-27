@@ -161,6 +161,45 @@ function renderExprBoldNoOp(s){
   return `<span class="qb">${esc(txt)}</span>`;
 }
 
+function fitTextToCircle(){
+  const circle = document.querySelector(".circle");
+  if (!circle) return;
+
+  const content = document.getElementById("content");
+  if (!content) return;
+
+  // Espace disponible (on enlève le padding réel du cercle si présent)
+  const cs = getComputedStyle(circle);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+
+  const availW = circle.clientWidth - padX;
+  const availH = circle.clientHeight - padY;
+
+  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
+
+  // Reset: repartir des tailles CSS
+  lines.forEach(el => { el.style.fontSize = ""; });
+
+  // Réduire progressivement jusqu’à ce que le bloc rentre
+  let k = 0;
+  while (k < 30) {
+    const r = content.getBoundingClientRect();
+    const tooWide = r.width > availW + 0.5;
+    const tooHigh = r.height > availH + 0.5;
+
+    if (!tooWide && !tooHigh) break;
+
+    lines.forEach(el => {
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      const next = Math.max(18, fs * 0.95);
+      el.style.fontSize = `${next}px`;
+    });
+
+    k++;
+  }
+}
+
 function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
@@ -176,6 +215,7 @@ function render(){
       <div class="q-line1">${q1}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
+    requestAnimationFrame(fitTextToCircle);
     return;
   }
 
@@ -186,6 +226,7 @@ function render(){
     <div class="a-line1">${a1}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
+  requestAnimationFrame(fitTextToCircle);
 }
 
 async function handleTap(){
