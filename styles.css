@@ -413,4 +413,18 @@ body{
   box-sizing: border-box;
 }
 
+/* === Correctifs v18 : anti-coupe + ligne 2 lisible === */
+.circle{
+  overflow: hidden;
+}
 
+/* Un peu d'air pour éviter que le premier/dernier caractère touche le bord */
+.q-line1, .a-line1{
+  padding: 0.1em 0.2em !important;
+}
+
+/* Ligne 2: peut revenir à la ligne si besoin (évite autoshrink inutile) */
+.q-line2, .a-line2{
+  white-space: normal !important;
+  padding: 0.05em 0.2em !important;
+}

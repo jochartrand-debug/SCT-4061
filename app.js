@@ -166,41 +166,70 @@ function fitTextToCircle(){
   const content = document.getElementById("content");
   if (!circle || !content) return;
 
-  // Available inner box of the circle (minus padding)
+  // Inner available box (minus padding)
   const cs = getComputedStyle(circle);
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  let availW = circle.clientWidth - padX;
-  let availH = circle.clientHeight - padY;
 
   // Safety margin so glyphs don't get clipped by the circle edge
-  availW = Math.max(0, availW * 0.92);
-  availH = Math.max(0, availH * 0.92);
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
-  // Make content take the measured box so scrollWidth/clientWidth are meaningful
-  content.style.maxWidth = Math.floor(availW) + "px";
+  // Constrain the content box so scrollWidth/clientWidth comparisons are meaningful
+  content.style.maxWidth  = Math.floor(availW) + "px";
   content.style.maxHeight = Math.floor(availH) + "px";
 
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
+  const line1 = content.querySelector(".q-line1,.a-line1");
+  const line2 = content.querySelector(".q-line2,.a-line2");
+  if (!line1) return;
+
   // Reset to CSS sizes
-  lines.forEach(el => { el.style.fontSize = ""; });
+  line1.style.fontSize = "";
+  if (line2) line2.style.fontSize = "";
+
+  const base1 = parseFloat(getComputedStyle(line1).fontSize);
+  const base2 = line2 ? parseFloat(getComputedStyle(line2).fontSize) : 0;
 
   const isOverflowing = () => {
+    // Height overflow
     if (content.scrollHeight > availH + 0.5) return true;
-    for (const el of lines) {
-      // +0.5 avoids false positives from subpixel rounding
-      if (el.scrollWidth > el.clientWidth + 0.5) return true;
-    }
+
+    // Line 1 is the only hard width constraint (nowrap titles)
+    if (line1.scrollWidth > line1.clientWidth + 0.5) return true;
+
+    // Line 2 should not trigger autoshrink (it can wrap / it’s short like (Ah))
+    // BUT if it is explicitly nowrap somewhere, this still protects it from cropping:
+    if (line2 && line2.scrollWidth > line2.clientWidth + 0.5) return true;
+
     return false;
   };
 
   let k = 0;
-  while (k < 40 && isOverflowing()) {
-    lines.forEach(el => {
-      const fs = parseFloat(getComputedStyle(el).fontSize);
-      const next = Math.max(16, fs * 0.94);
-      el.style.fontSize = next + "px";
-    });
+  while (k < 50 && isOverflowing()) {
+    const fs1 = parseFloat(getComputedStyle(line1).fontSize);
+
+    // Shrink line 1 first (most constrained)
+    const next1 = Math.max(20, fs1 * 0.94);
+    line1.style.fontSize = next1 + "px";
+
+    // Keep line 2 readable: never below 75% of line 1, and never above its base size
+    if (line2) {
+      const min2 = next1 * 0.75;
+      const desired2 = Math.min(base2, Math.max(min2, parseFloat(getComputedStyle(line2).fontSize)));
+      line2.style.fontSize = desired2 + "px";
+    }
+
+    // If line 1 already hit minimum and we still overflow (rare: very small screens),
+    // then gently scale both down together, but still protect line 2.
+    if (next1 <= 20.01 && isOverflowing()) {
+      const next1b = Math.max(18, next1 * 0.96);
+      line1.style.fontSize = next1b + "px";
+      if (line2) {
+        const min2b = next1b * 0.75;
+        line2.style.fontSize = Math.max(16, Math.min(base2, min2b)) + "px";
+      }
+    }
+
     k++;
   }
 }
