@@ -98,6 +98,15 @@ async function playTransitionQA(){
   document.body.classList.remove("flash-answer");
 }
 
+// Refit sur changements de taille (orientation / autres écrans)
+window.addEventListener("resize", () => requestAnimationFrame(fitTextToCircle));
+if (window.visualViewport){
+  window.visualViewport.addEventListener("resize", () => requestAnimationFrame(fitTextToCircle));
+}
+if (document.fonts && document.fonts.ready){
+  document.fonts.ready.then(() => requestAnimationFrame(fitTextToCircle)).catch(()=>{});
+}
+
 function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -163,36 +172,47 @@ function renderExprBoldNoOp(s){
 
 function fitTextToCircle(){
   const circle = document.querySelector(".circle");
-  if (!circle) return;
-
   const content = document.getElementById("content");
-  if (!content) return;
+  if (!circle || !content) return;
 
-  // Espace disponible (on enlève le padding réel du cercle si présent)
+  // Espace disponible (on enlève le padding réel du cercle)
   const cs = getComputedStyle(circle);
-  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+  const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
 
-  const availW = circle.clientWidth - padX;
-  const availH = circle.clientHeight - padY;
+  const availW = Math.max(0, circle.clientWidth - padX);
+  const availH = Math.max(0, circle.clientHeight - padY);
 
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
+  // Contraint le bloc au "vrai" espace intérieur
+  content.style.maxWidth = availW ? `${availW}px` : "";
+  content.style.maxHeight = availH ? `${availH}px` : "";
+
+  const lines = Array.from(content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2"));
+  if (!lines.length) return;
 
   // Reset: repartir des tailles CSS
   lines.forEach(el => { el.style.fontSize = ""; });
 
-  // Réduire progressivement jusqu’à ce que le bloc rentre
-  let k = 0;
-  while (k < 30) {
-    const r = content.getBoundingClientRect();
-    const tooWide = r.width > availW + 0.5;
-    const tooHigh = r.height > availH + 0.5;
+  const minPx = 14;
 
-    if (!tooWide && !tooHigh) break;
+  // Réduit progressivement jusqu'à ce que TOUT rentre:
+  // - aucune ligne ne déborde horizontalement (scrollWidth <= clientWidth)
+  // - le bloc ne déborde pas verticalement (scrollHeight <= availH)
+  let k = 0;
+  while (k < 60) {
+    const tooTall = availH > 0 && content.scrollHeight > availH + 0.5;
+
+    let tooWide = false;
+    for (const el of lines) {
+      // clientWidth = largeur réellement disponible (grâce au CSS width:100%)
+      if (el.scrollWidth > el.clientWidth + 0.5) { tooWide = true; break; }
+    }
+
+    if (!tooWide && !tooTall) break;
 
     lines.forEach(el => {
-      const fs = parseFloat(getComputedStyle(el).fontSize);
-      const next = Math.max(18, fs * 0.95);
+      const fs = parseFloat(getComputedStyle(el).fontSize) || 0;
+      const next = Math.max(minPx, fs * 0.94);
       el.style.fontSize = `${next}px`;
     });
 

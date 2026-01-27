@@ -406,3 +406,12 @@ body{
 }
 
 
+
+
+/* === Robustesse multi-écrans : les lignes prennent toute la largeur disponible === */
+.content{ box-sizing: border-box; }
+.q-line1,.q-line2,.a-line1,.a-line2{
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
