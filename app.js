@@ -162,18 +162,35 @@ function renderExprBoldNoOp(s){
 }
 
 function fitTextToCircle(element){
-  // Mesure si le texte déborde et réduit la taille si nécessaire
+  // Mesure si le texte déborde et ajuste la taille pour maximiser l'utilisation de l'espace
   const circle = element.closest('.circle');
   if (!circle) return;
   
-  const maxWidth = circle.clientWidth - 40; // marge de sécurité
+  const maxWidth = circle.clientWidth - 48; // marge de sécurité
+  
+  // Réinitialiser le style inline pour partir de la taille CSS de base
+  element.style.fontSize = '';
+  
   let fontSize = parseFloat(window.getComputedStyle(element).fontSize);
+  const maxSize = 110; // taille maximale en pixels
   const minSize = 28; // taille minimale en pixels
   
-  // Utilise scrollWidth pour détecter le débordement
+  // Si le texte déborde, réduire
   while (element.scrollWidth > maxWidth && fontSize > minSize) {
-    fontSize -= 2;
+    fontSize -= 1;
     element.style.fontSize = fontSize + 'px';
+  }
+  
+  // Si le texte est trop petit, essayer d'agrandir jusqu'à la limite
+  while (element.scrollWidth < maxWidth && fontSize < maxSize) {
+    const testSize = fontSize + 1;
+    element.style.fontSize = testSize + 'px';
+    if (element.scrollWidth > maxWidth) {
+      // On a dépassé, revenir en arrière
+      element.style.fontSize = fontSize + 'px';
+      break;
+    }
+    fontSize = testSize;
   }
 }
 
@@ -196,7 +213,17 @@ function render(){
     // Ajuster la taille après le rendu
     requestAnimationFrame(() => {
       const line1 = el.querySelector('.q-line1');
-      if (line1) fitTextToCircle(line1);
+      const line2 = el.querySelector('.q-line2');
+      
+      if (line1) {
+        fitTextToCircle(line1);
+        
+        // Appliquer la même taille à la ligne 2
+        if (line2) {
+          const finalSize = window.getComputedStyle(line1).fontSize;
+          line2.style.fontSize = finalSize;
+        }
+      }
     });
     return;
   }
@@ -212,7 +239,17 @@ function render(){
   // Ajuster la taille après le rendu
   requestAnimationFrame(() => {
     const line1 = el.querySelector('.a-line1');
-    if (line1) fitTextToCircle(line1);
+    const line2 = el.querySelector('.a-line2');
+    
+    if (line1) {
+      fitTextToCircle(line1);
+      
+      // Appliquer la même taille à la ligne 2
+      if (line2) {
+        const finalSize = window.getComputedStyle(line1).fontSize;
+        line2.style.fontSize = finalSize;
+      }
+    }
   });
 }
 

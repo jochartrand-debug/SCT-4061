@@ -353,20 +353,20 @@ body::before{
   box-sizing: border-box;
 }
 
-/* Titre (ligne 1) : jamais sur 2 lignes + autoshrink plus agressif */
+/* Titre (ligne 1) : taille de base optimisée pour être maximisée par JS */
 .q-line1{
   white-space: nowrap;
   text-wrap: nowrap;
   max-width: 100%;
-  font-size: clamp(28px, 5.5vw, 110px) !important;
+  font-size: clamp(64px, 9vw, 110px) !important;
 }
 
-/* Réponse (ligne 1) : éviter le retour à la ligne (ex: Watt-heure) */
+/* Réponse (ligne 1) : taille de base optimisée */
 .a-line1{
   white-space: nowrap;
   text-wrap: nowrap;
   max-width: 100%;
-  font-size: clamp(28px, 5.5vw, 110px) !important;
+  font-size: clamp(64px, 9vw, 110px) !important;
 }
 
 /* Opérateur multiplication + trait d’union : Inter Regular, non gras */
