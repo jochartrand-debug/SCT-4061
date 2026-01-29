@@ -137,7 +137,7 @@ function renderExprBoldNoOp(s){
   // Rend:
   // - "A x B" ou "A × B" : A et B en gras, × non gras
   // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
-  const txt = normalizeMultiplicationSpaces((s ?? \"\").trim());
+  const txt = (s ?? "").trim();
   if (!txt) return "";
 
   // 1) Multiplication (espaces autour)
@@ -162,15 +162,6 @@ function renderExprBoldNoOp(s){
 
   // 3) Texte simple
   return `<span class="qb">${esc(txt)}</span>`;
-}
-
-
-// Normalisation de l’opérateur de multiplication (x / ×)
-function normalizeMultiplicationSpaces(text){
-  return text
-    .replace(/\s*(×|x)\s*/g, " × ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function render(){
