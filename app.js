@@ -164,6 +164,15 @@ function renderExprBoldNoOp(s){
   return `<span class="qb">${esc(txt)}</span>`;
 }
 
+
+// Normalisation de l’opérateur de multiplication (x / ×)
+function normalizeMultiplicationSpaces(text){
+  return text
+    .replace(/\s*(×|x)\s*/g, " × ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
