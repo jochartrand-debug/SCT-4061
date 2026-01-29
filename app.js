@@ -162,36 +162,54 @@ function renderExprBoldNoOp(s){
 }
 
 function fitTextToCircle(element){
-  // Mesure si le texte déborde et ajuste la taille pour maximiser l'utilisation de l'espace
+  // Mesure précise de la largeur du texte avec un élément temporaire
   const circle = element.closest('.circle');
   if (!circle) return;
   
-  const maxWidth = circle.clientWidth - 48; // marge de sécurité
+  const maxWidth = circle.clientWidth - 64; // marge de sécurité plus grande
+  const minSize = 32;
+  const maxSize = 110;
   
-  // Réinitialiser le style inline pour partir de la taille CSS de base
-  element.style.fontSize = '';
+  // Créer un élément temporaire pour mesurer avec précision
+  const temp = document.createElement('div');
+  temp.style.position = 'absolute';
+  temp.style.visibility = 'hidden';
+  temp.style.whiteSpace = 'nowrap';
+  temp.style.fontFamily = window.getComputedStyle(element).fontFamily;
+  temp.style.fontWeight = window.getComputedStyle(element).fontWeight;
+  temp.innerHTML = element.innerHTML;
+  document.body.appendChild(temp);
   
-  let fontSize = parseFloat(window.getComputedStyle(element).fontSize);
-  const maxSize = 110; // taille maximale en pixels
-  const minSize = 28; // taille minimale en pixels
-  
-  // Si le texte déborde, réduire
-  while (element.scrollWidth > maxWidth && fontSize > minSize) {
-    fontSize -= 1;
-    element.style.fontSize = fontSize + 'px';
+  // Fonction pour obtenir la largeur réelle
+  function getTextWidth(size) {
+    temp.style.fontSize = size + 'px';
+    return temp.offsetWidth;
   }
   
-  // Si le texte est trop petit, essayer d'agrandir jusqu'à la limite
-  while (element.scrollWidth < maxWidth && fontSize < maxSize) {
-    const testSize = fontSize + 1;
-    element.style.fontSize = testSize + 'px';
-    if (element.scrollWidth > maxWidth) {
-      // On a dépassé, revenir en arrière
-      element.style.fontSize = fontSize + 'px';
-      break;
+  // Recherche binaire pour trouver la taille optimale
+  let low = minSize;
+  let high = maxSize;
+  let bestSize = minSize;
+  
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const width = getTextWidth(mid);
+    
+    if (width <= maxWidth) {
+      bestSize = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
     }
-    fontSize = testSize;
   }
+  
+  // Nettoyer
+  document.body.removeChild(temp);
+  
+  // Appliquer la taille optimale
+  element.style.fontSize = bestSize + 'px';
+  
+  return bestSize;
 }
 
 function render(){
@@ -216,12 +234,11 @@ function render(){
       const line2 = el.querySelector('.q-line2');
       
       if (line1) {
-        fitTextToCircle(line1);
+        const finalSize = fitTextToCircle(line1);
         
         // Appliquer la même taille à la ligne 2
         if (line2) {
-          const finalSize = window.getComputedStyle(line1).fontSize;
-          line2.style.fontSize = finalSize;
+          line2.style.fontSize = finalSize + 'px';
         }
       }
     });
@@ -242,12 +259,11 @@ function render(){
     const line2 = el.querySelector('.a-line2');
     
     if (line1) {
-      fitTextToCircle(line1);
+      const finalSize = fitTextToCircle(line1);
       
       // Appliquer la même taille à la ligne 2
       if (line2) {
-        const finalSize = window.getComputedStyle(line1).fontSize;
-        line2.style.fontSize = finalSize;
+        line2.style.fontSize = finalSize + 'px';
       }
     }
   });
