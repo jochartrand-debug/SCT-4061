@@ -162,76 +162,63 @@ function renderExprBoldNoOp(s){
 }
 
 
-// ===== Auto-fit robuste du texte dans le cercle =====
-// - Ligne 1 (ex. Ampère-heure) = contrainte
-// - Ligne 2 (ex. (Ah)) = protégée, jamais minuscule
 function fitTextToCircle(){
   const circle = document.querySelector(".circle");
   const content = document.getElementById("content");
-  if(!circle || !content) return;
+  if (!circle || !content) return;
 
+  // reset any previous scaling
+  content.style.transform = "";
+  content.style.transformOrigin = "center center";
+
+  // Available inner box (minus padding) with safety margin
   const cs = getComputedStyle(circle);
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
-  // marge de sécurité pour éviter le clipping au bord du cercle (iOS varie)
-  const availW = (circle.clientWidth - padX) * 0.92;
-  const availH = (circle.clientHeight - padY) * 0.92;
+  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
+  if (!lines.length) return;
 
-  const line1 = content.querySelector(".q-line1,.a-line1");
-  const line2 = content.querySelector(".q-line2,.a-line2");
-  if(!line1) return;
+  // Measure REAL required size (scrollWidth/scrollHeight includes nowrap overflow)
+  let maxW = 0;
+  for (const el of lines){
+    maxW = Math.max(maxW, el.scrollWidth);
+  }
+  const needH = content.scrollHeight;
 
-  // reset tailles (repart des tailles CSS clamp)
-  line1.style.fontSize = "";
-  if(line2) line2.style.fontSize = "";
+  if (maxW <= 0 || needH <= 0) return;
 
-  // bornes (évite micro-texte)
-  const min1 = 26;
-  const min2Abs = 18;
+  // Compute scale so everything fits, but never upscale
+  let s = Math.min(1, availW / maxW, availH / needH);
 
-  let i = 0;
-  while(i < 60){
-    const r = content.getBoundingClientRect();
+  // Extra safety for iOS subpixel rounding (prevents clipped first/last glyph)
+  s = Math.max(0.5, s * 0.98);
 
-    // overflow réel : nowrap => scrollWidth
-    const overflow =
-      r.width > availW + 0.5 ||
-      r.height > availH + 0.5 ||
-      (line1.scrollWidth > line1.clientWidth + 0.5);
+  content.style.transform = `scale(${s})`;
+}
 
-    if(!overflow) break;
+let fitScheduled = false;
+function scheduleFit(){
+  if (fitScheduled) return;
+  fitScheduled = true;
 
-    const fs1 = parseFloat(getComputedStyle(line1).fontSize);
-    const next1 = Math.max(min1, fs1 * 0.94);
-    line1.style.fontSize = next1 + "px";
+  // 2 RAFs: ensures layout + font swap settle (important on iOS)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fitScheduled = false;
+      fitTextToCircle();
+    });
+  });
 
-    if(line2){
-      // ligne 2 doit rester lisible : au moins 75% de la ligne 1, mais jamais sous min2Abs
-      const min2 = Math.max(min2Abs, next1 * 0.75);
-      const fs2 = parseFloat(getComputedStyle(line2).fontSize);
-      // Si la ligne 2 est déjà plus grande, on la garde (elle ne doit pas rétrécir à cause de la ligne 1)
-      line2.style.fontSize = Math.max(min2, fs2) + "px";
-    }
-
-    i++;
+  // If the browser supports it, refit once fonts are ready
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(() => {
+      fitTextToCircle();
+    }).catch(()=>{});
   }
 }
-
-function scheduleFit(){
-  // 1) après layout
-  requestAnimationFrame(() => {
-    fitTextToCircle();
-    // 2) après chargement des polices (sinon iPhone peut recalculer et couper)
-    if(document.fonts && document.fonts.ready){
-      document.fonts.ready.then(() => fitTextToCircle()).catch(()=>{});
-    }
-  });
-}
-
-window.addEventListener("resize", scheduleFit);
-window.addEventListener("orientationchange", scheduleFit);
-
 
 function render(){
   card.classList.remove("home","question","answer");
@@ -248,9 +235,8 @@ function render(){
       <div class="q-line1">${q1}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    
     scheduleFit();
-return;
+    return;
   }
 
   // answer
@@ -260,9 +246,9 @@ return;
     <div class="a-line1">${a1}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-
-    scheduleFit();
+  scheduleFit();
 }
+
 
 async function handleTap(){
   if (tapLocked) return;
@@ -294,6 +280,9 @@ async function handleTap(){
     }, 250);
   }
 }
+
+window.addEventListener("resize", () => scheduleFit());
+window.addEventListener("orientationchange", () => scheduleFit());
 
 card.addEventListener("pointerup", (e) => {
   e.preventDefault();
