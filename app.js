@@ -134,11 +134,10 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  text = normalizeMultiplicationSpaces(text);
   // Rend:
   // - "A x B" ou "A × B" : A et B en gras, × non gras
   // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
-  const txt = (s ?? "").trim();
+  const txt = normalizeMultiplicationSpaces((s ?? \"\").trim());
   if (!txt) return "";
 
   // 1) Multiplication (espaces autour)
