@@ -80,6 +80,8 @@ body{
   width: min(78vmin, 640px);
   height: min(78vmin, 640px);
   border-radius: 50%;
+  overflow: hidden;
+  padding: 2.5%;
   display: grid;
   place-items: center;
 }
@@ -99,8 +101,13 @@ body{
 .card.answer #content{ display:block; }
 
 .content{
-  text-align:center;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* vrai centrage horizontal */
+  justify-content: center;
+  text-align: center;
+  width: auto;           /* ne pas prendre 100% (sinon scrollWidth = largeur cercle) */
+  max-width: 100%;
 }
 
 .q-line1, .a-line1{
@@ -405,36 +412,12 @@ body{
 
 
 
-/* === Robust fit v6 (centering + no clipping) === */
-.circle{
-  overflow: hidden;              /* ensure nothing escapes the circle */
-  padding: clamp(18px, 4vmin, 40px); /* a bit more breathing room */
-}
-
-.content{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: auto;
+/* === Centrage robuste des lignes (évite décalage avec × et - sur certains iPhone) === */
+.q-line1, .q-line2, .a-line1, .a-line2{
+  display: inline-block;   /* shrink-wrap au texte */
   max-width: 100%;
-  padding: 0;                    /* avoid horizontal drift */
-  transform-origin: center center;
-  will-change: transform;
 }
 
-.q-line1, .a-line1,
-.q-line2, .a-line2{
-  width: auto;
-  max-width: 100%;
-  padding: 0 0.15em;             /* tiny inner safety for glyph edges */
-  box-sizing: border-box;
-}
-
-.q-line1, .a-line1{
-  white-space: nowrap;
-}
-
-.q-line2, .a-line2{
-  white-space: normal;
+.mult, .hyph{
+  display: inline-block;
 }

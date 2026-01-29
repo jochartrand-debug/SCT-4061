@@ -161,65 +161,6 @@ function renderExprBoldNoOp(s){
   return `<span class="qb">${esc(txt)}</span>`;
 }
 
-
-function fitTextToCircle(){
-  const circle = document.querySelector(".circle");
-  const content = document.getElementById("content");
-  if (!circle || !content) return;
-
-  // reset any previous scaling
-  content.style.transform = "";
-  content.style.transformOrigin = "center center";
-
-  // Available inner box (minus padding) with safety margin
-  const cs = getComputedStyle(circle);
-  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
-
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
-  if (!lines.length) return;
-
-  // Measure REAL required size (scrollWidth/scrollHeight includes nowrap overflow)
-  let maxW = 0;
-  for (const el of lines){
-    maxW = Math.max(maxW, el.scrollWidth);
-  }
-  const needH = content.scrollHeight;
-
-  if (maxW <= 0 || needH <= 0) return;
-
-  // Compute scale so everything fits, but never upscale
-  let s = Math.min(1, availW / maxW, availH / needH);
-
-  // Extra safety for iOS subpixel rounding (prevents clipped first/last glyph)
-  s = Math.max(0.5, s * 0.98);
-
-  content.style.transform = `scale(${s})`;
-}
-
-let fitScheduled = false;
-function scheduleFit(){
-  if (fitScheduled) return;
-  fitScheduled = true;
-
-  // 2 RAFs: ensures layout + font swap settle (important on iOS)
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      fitScheduled = false;
-      fitTextToCircle();
-    });
-  });
-
-  // If the browser supports it, refit once fonts are ready
-  if (document.fonts && document.fonts.ready){
-    document.fonts.ready.then(() => {
-      fitTextToCircle();
-    }).catch(()=>{});
-  }
-}
-
 function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
@@ -235,7 +176,6 @@ function render(){
       <div class="q-line1">${q1}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    scheduleFit();
     return;
   }
 
@@ -246,9 +186,7 @@ function render(){
     <div class="a-line1">${a1}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  scheduleFit();
 }
-
 
 async function handleTap(){
   if (tapLocked) return;
@@ -280,9 +218,6 @@ async function handleTap(){
     }, 250);
   }
 }
-
-window.addEventListener("resize", () => scheduleFit());
-window.addEventListener("orientationchange", () => scheduleFit());
 
 card.addEventListener("pointerup", (e) => {
   e.preventDefault();
