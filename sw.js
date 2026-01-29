@@ -1,4 +1,4 @@
-const CACHE_NAME = "unites-mesure-v24";
+const CACHE_NAME = "unites-mesure-v26";
 const ASSETS = [
   "./",
   "./index.html",
@@ -23,5 +23,13 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
+  );
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
 });

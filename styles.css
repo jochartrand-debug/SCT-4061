@@ -77,13 +77,13 @@ body{
 
 /* Conteneur cercle + contenu */
 .circle{
-  width: min(78vmin, 640px);
+width: min(78vmin, 640px);
   height: min(78vmin, 640px);
   border-radius: 50%;
-  overflow: hidden;
-  padding: 2.5%;
   display: grid;
   place-items: center;
+  overflow: hidden;
+  padding: 2.5%;
 }
 
 /* Cercle blanc seulement pour la QUESTION */
@@ -103,23 +103,28 @@ body{
 .content{
   display: flex;
   flex-direction: column;
-  align-items: center;   /* vrai centrage horizontal */
+  align-items: center;
   justify-content: center;
   text-align: center;
-  width: auto;           /* ne pas prendre 100% (sinon scrollWidth = largeur cercle) */
+  width: auto;
   max-width: 100%;
+  will-change: transform;
 }
 
 .q-line1, .a-line1{
-  display:block;
-  font-size: clamp(64px, 10vw, 140px);
+  white-space: nowrap;
+
+  display: inline-block;
+font-size: clamp(64px, 10vw, 140px);
   font-weight: 750;
   line-height: 1.05;
 }
 
 .q-line2, .a-line2{
-  display:block;
-  font-size: clamp(40px, 6vw, 80px);
+  white-space: normal;
+
+  display: inline-block;
+font-size: clamp(40px, 6vw, 80px);
   opacity: 0.9;
   line-height: 1.1;
 }
@@ -231,12 +236,22 @@ body::before{
 }
 
 /* q-line1 container NOT bold; bold is applied only to .qb */
-.q-line1{ font-weight: 400 !important; }
+.q-line1{
+  white-space: nowrap;
+
+  display: inline-block;
+font-weight: 400 !important;
+}
 .qb{ font-weight: 800; }
 .mult{ font-weight: 400 !important; }
 
 /* Deuxième ligne question jamais en gras */
-.q-line2{ font-weight: 400 !important; }
+.q-line2{
+  white-space: normal;
+
+  display: inline-block;
+font-weight: 400 !important;
+}
 
 /* Cercle: assez grand pour contenir le texte */
 .circle{
@@ -349,24 +364,24 @@ body::before{
 .card.question .circle{
   width: min(96vmin, 900px) !important;
   height: min(96vmin, 900px) !important;
-  padding: 24px !important;
+  padding: 16px !important;
   box-sizing: border-box;
 }
 
-/* Titre (ligne 1) : taille de base optimisée pour être maximisée par JS */
+/* Titre (ligne 1) : jamais sur 2 lignes + autoshrink plus agressif */
 .q-line1{
   white-space: nowrap;
   text-wrap: nowrap;
   max-width: 100%;
-  font-size: clamp(64px, 9vw, 110px) !important;
+  font-size: clamp(42px, 7vw, 110px) !important;
 }
 
-/* Réponse (ligne 1) : taille de base optimisée */
+/* Réponse (ligne 1) : éviter le retour à la ligne (ex: Watt-heure) */
 .a-line1{
   white-space: nowrap;
   text-wrap: nowrap;
   max-width: 100%;
-  font-size: clamp(64px, 9vw, 110px) !important;
+  font-size: clamp(42px, 7vw, 110px) !important;
 }
 
 /* Opérateur multiplication + trait d’union : Inter Regular, non gras */
@@ -379,8 +394,10 @@ body::before{
 /* Correction centrage réel pour textes composés (Ampère-heure, A × B) */
 .q-line1,
 .a-line1{
-  display: block;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0;
   width: 100%;
 }
 
@@ -410,14 +427,5 @@ body{
 
 
 
-/* Correction centrage robuste des lignes (évite décalage avec × et - sur certains iPhone) */
-.q-line1, .q-line2, .a-line1, .a-line2{
-  display: block;
-  text-align: center;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.mult, .hyph{
-  display: inline;
-}
+/* Neutralise padding horizontal pour éviter le drift optique */
+.q-line1,.q-line2,.a-line1,.a-line2{ padding-left: 0; padding-right: 0; }
