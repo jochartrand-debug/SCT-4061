@@ -161,78 +161,77 @@ function renderExprBoldNoOp(s){
   return `<span class="qb">${esc(txt)}</span>`;
 }
 
+
+// ===== Auto-fit robuste du texte dans le cercle =====
+// - Ligne 1 (ex. Ampère-heure) = contrainte
+// - Ligne 2 (ex. (Ah)) = protégée, jamais minuscule
 function fitTextToCircle(){
   const circle = document.querySelector(".circle");
   const content = document.getElementById("content");
-  if (!circle || !content) return;
+  if(!circle || !content) return;
 
-  // Inner available box (minus padding)
   const cs = getComputedStyle(circle);
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  // Safety margin so glyphs don't get clipped by the circle edge
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
-
-  // Constrain the content box so scrollWidth/clientWidth comparisons are meaningful
-  content.style.maxWidth  = Math.floor(availW) + "px";
-  content.style.maxHeight = Math.floor(availH) + "px";
+  // marge de sécurité pour éviter le clipping au bord du cercle (iOS varie)
+  const availW = (circle.clientWidth - padX) * 0.92;
+  const availH = (circle.clientHeight - padY) * 0.92;
 
   const line1 = content.querySelector(".q-line1,.a-line1");
   const line2 = content.querySelector(".q-line2,.a-line2");
-  if (!line1) return;
+  if(!line1) return;
 
-  // Reset to CSS sizes
+  // reset tailles (repart des tailles CSS clamp)
   line1.style.fontSize = "";
-  if (line2) line2.style.fontSize = "";
+  if(line2) line2.style.fontSize = "";
 
-  const base1 = parseFloat(getComputedStyle(line1).fontSize);
-  const base2 = line2 ? parseFloat(getComputedStyle(line2).fontSize) : 0;
+  // bornes (évite micro-texte)
+  const min1 = 26;
+  const min2Abs = 18;
 
-  const isOverflowing = () => {
-    // Height overflow
-    if (content.scrollHeight > availH + 0.5) return true;
+  let i = 0;
+  while(i < 60){
+    const r = content.getBoundingClientRect();
 
-    // Line 1 is the only hard width constraint (nowrap titles)
-    if (line1.scrollWidth > line1.clientWidth + 0.5) return true;
+    // overflow réel : nowrap => scrollWidth
+    const overflow =
+      r.width > availW + 0.5 ||
+      r.height > availH + 0.5 ||
+      (line1.scrollWidth > line1.clientWidth + 0.5);
 
-    // Line 2 should not trigger autoshrink (it can wrap / it’s short like (Ah))
-    // BUT if it is explicitly nowrap somewhere, this still protects it from cropping:
-    if (line2 && line2.scrollWidth > line2.clientWidth + 0.5) return true;
+    if(!overflow) break;
 
-    return false;
-  };
-
-  let k = 0;
-  while (k < 50 && isOverflowing()) {
     const fs1 = parseFloat(getComputedStyle(line1).fontSize);
-
-    // Shrink line 1 first (most constrained)
-    const next1 = Math.max(20, fs1 * 0.94);
+    const next1 = Math.max(min1, fs1 * 0.94);
     line1.style.fontSize = next1 + "px";
 
-    // Keep line 2 readable: never below 75% of line 1, and never above its base size
-    if (line2) {
-      const min2 = next1 * 0.75;
-      const desired2 = Math.min(base2, Math.max(min2, parseFloat(getComputedStyle(line2).fontSize)));
-      line2.style.fontSize = desired2 + "px";
+    if(line2){
+      // ligne 2 doit rester lisible : au moins 75% de la ligne 1, mais jamais sous min2Abs
+      const min2 = Math.max(min2Abs, next1 * 0.75);
+      const fs2 = parseFloat(getComputedStyle(line2).fontSize);
+      // Si la ligne 2 est déjà plus grande, on la garde (elle ne doit pas rétrécir à cause de la ligne 1)
+      line2.style.fontSize = Math.max(min2, fs2) + "px";
     }
 
-    // If line 1 already hit minimum and we still overflow (rare: very small screens),
-    // then gently scale both down together, but still protect line 2.
-    if (next1 <= 20.01 && isOverflowing()) {
-      const next1b = Math.max(18, next1 * 0.96);
-      line1.style.fontSize = next1b + "px";
-      if (line2) {
-        const min2b = next1b * 0.75;
-        line2.style.fontSize = Math.max(16, Math.min(base2, min2b)) + "px";
-      }
-    }
-
-    k++;
+    i++;
   }
 }
+
+function scheduleFit(){
+  // 1) après layout
+  requestAnimationFrame(() => {
+    fitTextToCircle();
+    // 2) après chargement des polices (sinon iPhone peut recalculer et couper)
+    if(document.fonts && document.fonts.ready){
+      document.fonts.ready.then(() => fitTextToCircle()).catch(()=>{});
+    }
+  });
+}
+
+window.addEventListener("resize", scheduleFit);
+window.addEventListener("orientationchange", scheduleFit);
+
 
 function render(){
   card.classList.remove("home","question","answer");
@@ -249,8 +248,9 @@ function render(){
       <div class="q-line1">${q1}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    requestAnimationFrame(fitTextToCircle);
-    return;
+    
+    scheduleFit();
+return;
   }
 
   // answer
@@ -260,7 +260,8 @@ function render(){
     <div class="a-line1">${a1}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  requestAnimationFrame(fitTextToCircle);
+
+    scheduleFit();
 }
 
 async function handleTap(){
@@ -291,17 +292,6 @@ async function handleTap(){
     setTimeout(() => {
       tapLocked = false;
     }, 250);
-  }
-}
-
-
-if (typeof window !== "undefined") {
-  window.addEventListener("resize", () => requestAnimationFrame(fitTextToCircle), { passive: true });
-  window.addEventListener("orientationchange", () => requestAnimationFrame(fitTextToCircle), { passive: true });
-
-  // When fonts finish loading, refit (important on iOS)
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => requestAnimationFrame(fitTextToCircle)).catch(() => {});
   }
 }
 
