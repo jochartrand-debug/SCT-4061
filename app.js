@@ -116,7 +116,10 @@ function nextIndex(){
   state.pos += 1;
   if (state.pos >= state.order.length) {
     state.mode = "home";
-    renderAndFit();
+    window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
+window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
+
+render();
     return null;
   }
   state.i = state.order[state.pos];
@@ -161,50 +164,6 @@ function renderExprBoldNoOp(s){
   return `<span class="qb">${esc(txt)}</span>`;
 }
 
-function fitTextToCircle(){
-  const circle = document.querySelector(".circle");
-  const content = document.getElementById("content");
-  if (!circle || !content) return;
-
-  // Available inner box of the circle (minus padding)
-  const cs = getComputedStyle(circle);
-  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  let availW = circle.clientWidth - padX;
-  let availH = circle.clientHeight - padY;
-
-  // Safety margin so glyphs don't get clipped by the circle edge
-  availW = Math.max(0, availW * 0.92);
-  availH = Math.max(0, availH * 0.92);
-
-  // Make content take the measured box so scrollWidth/clientWidth are meaningful
-  content.style.maxWidth = Math.floor(availW) + "px";
-  content.style.maxHeight = Math.floor(availH) + "px";
-
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
-  // Reset to CSS sizes
-  lines.forEach(el => { el.style.fontSize = ""; });
-
-  const isOverflowing = () => {
-    if (content.scrollHeight > availH + 0.5) return true;
-    for (const el of lines) {
-      // +0.5 avoids false positives from subpixel rounding
-      if (el.scrollWidth > el.clientWidth + 0.5) return true;
-    }
-    return false;
-  };
-
-  let k = 0;
-  while (k < 40 && isOverflowing()) {
-    lines.forEach(el => {
-      const fs = parseFloat(getComputedStyle(el).fontSize);
-      const next = Math.max(16, fs * 0.94);
-      el.style.fontSize = next + "px";
-    });
-    k++;
-  }
-}
-
 function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
@@ -220,7 +179,6 @@ function render(){
       <div class="q-line1">${q1}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    requestAnimationFrame(fitTextToCircle);
     return;
   }
 
@@ -231,17 +189,19 @@ function render(){
     <div class="a-line1">${a1}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  requestAnimationFrame(fitTextToCircle);
+
+  scheduleFit();
 }
 
 
 // ===== Auto-fit robuste (indépendant de la taille d'écran) =====
+// On scale le bloc #content pour qu'il rentre dans le cercle, après layout + après chargement des polices.
 function fitToCircle(){
   const circle = document.querySelector(".circle");
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // reset transform before measuring
+  // Reset transform before measuring
   content.style.transform = "none";
   content.style.transformOrigin = "50% 50%";
 
@@ -249,36 +209,32 @@ function fitToCircle(){
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  // marge de sécurité pour éviter le clipping sur bord circulaire
-  const availW = (circle.clientWidth - padX) * 0.92;
-  const availH = (circle.clientHeight - padY) * 0.92;
+  // marge de sécurité pour éviter le clipping sur bord circulaire (iOS subpixels)
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
   const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
   if(!lines.length) return;
 
-  // Largeur requise réelle (shrink-wrap des lignes)
+  // largeur requise réelle (shrink-wrap des lignes)
   let neededW = 0;
   lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
-
   const neededH = content.scrollHeight;
 
-  // scale pour rentrer en largeur ET hauteur
   let s = 1;
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  // clamp + tiny safety
+  // clamp + petite marge
   s = Math.max(0.5, Math.min(1, s)) * 0.99;
 
   content.style.transform = `translateZ(0) scale(${s})`;
 }
 
-function renderAndFit(){
-  renderAndFit();
-  // 1) après layout
+function scheduleFit(){
   requestAnimationFrame(() => {
     fitToCircle();
-    // 2) après que les polices soient prêtes (iOS peut changer la largeur après swap)
+    // iOS: la largeur peut changer après le swap de police
     if (document.fonts && document.fonts.ready){
       document.fonts.ready.then(() => requestAnimationFrame(fitToCircle)).catch(()=>{});
     }
@@ -293,36 +249,34 @@ async function handleTap(){
     if (state.mode === "home"){
       startSession();
       state.mode = "question";
-      renderAndFit();
+      window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
+window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
+
+render();
       return;
     }
 
     if (state.mode === "question"){
       await playTransitionQA();
       state.mode = "answer";
-      renderAndFit();
+      window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
+window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
+
+render();
       return;
     }
 
     const nxt = nextIndex();
     if (nxt === null) return;
     state.mode = "question";
-    renderAndFit();
+    window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
+window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
+
+render();
   } finally {
     setTimeout(() => {
       tapLocked = false;
     }, 250);
-  }
-}
-
-
-if (typeof window !== "undefined") {
-  window.addEventListener("resize", () => requestAnimationFrame(fitTextToCircle), { passive: true });
-  window.addEventListener("orientationchange", () => requestAnimationFrame(fitTextToCircle), { passive: true });
-
-  // When fonts finish loading, refit (important on iOS)
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => requestAnimationFrame(fitTextToCircle)).catch(() => {});
   }
 }
 
@@ -331,4 +285,7 @@ card.addEventListener("pointerup", (e) => {
   handleTap().catch(console.error);
 });
 
-renderAndFit();
+window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
+window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
+
+render();
