@@ -116,10 +116,7 @@ function nextIndex(){
   state.pos += 1;
   if (state.pos >= state.order.length) {
     state.mode = "home";
-    window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
-window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
-
-render();
+    render();
     return null;
   }
   state.i = state.order[state.pos];
@@ -138,10 +135,18 @@ function renderExprBoldNoOp(s){
   // - "A x B" ou "A × B" : A et B en gras, × non gras
   // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
+  // Normalise multiplication sans casser des mots (ex: "Lux")
+  const norm = txt
+    .replace(/([^\s])×([^\s])/g, "$1 × $2")
+    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
+    .replace(/\s+[x×]\s+/g, " × ")
+    .replace(/\s+/g, " ")
+    .trim();
+
   if (!txt) return "";
 
   // 1) Multiplication (espaces autour)
-  const mulParts = txt.split(/\s+[x×]\s+/);
+  const mulParts = norm.split(/\s+×\s+/);
   if (mulParts.length > 1){
     let html = `<span class="qb">${esc(mulParts[0])}</span>`;
     for (let k = 1; k < mulParts.length; k++){
@@ -151,7 +156,7 @@ function renderExprBoldNoOp(s){
   }
 
   // 2) Composés avec trait d'union (sans espaces)
-  const hyParts = txt.split(/-/);
+  const hyParts = norm.split(/-/);
   if (hyParts.length > 1){
     let html = `<span class="qb">${esc(hyParts[0])}</span>`;
     for (let k = 1; k < hyParts.length; k++){
@@ -161,7 +166,7 @@ function renderExprBoldNoOp(s){
   }
 
   // 3) Texte simple
-  return `<span class="qb">${esc(txt)}</span>`;
+  return `<span class="qb">${esc(norm)}</span>`;
 }
 
 function render(){
@@ -179,6 +184,7 @@ function render(){
       <div class="q-line1">${q1}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
+    scheduleFit();
     return;
   }
 
@@ -189,19 +195,15 @@ function render(){
     <div class="a-line1">${a1}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-
-  scheduleFit();
 }
 
 
-// ===== Auto-fit robuste (indépendant de la taille d'écran) =====
-// On scale le bloc #content pour qu'il rentre dans le cercle, après layout + après chargement des polices.
+// ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
 function fitToCircle(){
   const circle = document.querySelector(".circle");
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // Reset transform before measuring
   content.style.transform = "none";
   content.style.transformOrigin = "50% 50%";
 
@@ -209,14 +211,12 @@ function fitToCircle(){
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  // marge de sécurité pour éviter le clipping sur bord circulaire (iOS subpixels)
   const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
   const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
   const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
   if(!lines.length) return;
 
-  // largeur requise réelle (shrink-wrap des lignes)
   let neededW = 0;
   lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
   const neededH = content.scrollHeight;
@@ -225,16 +225,13 @@ function fitToCircle(){
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  // clamp + petite marge
   s = Math.max(0.5, Math.min(1, s)) * 0.99;
-
   content.style.transform = `translateZ(0) scale(${s})`;
 }
 
 function scheduleFit(){
   requestAnimationFrame(() => {
     fitToCircle();
-    // iOS: la largeur peut changer après le swap de police
     if (document.fonts && document.fonts.ready){
       document.fonts.ready.then(() => requestAnimationFrame(fitToCircle)).catch(()=>{});
     }
@@ -249,30 +246,22 @@ async function handleTap(){
     if (state.mode === "home"){
       startSession();
       state.mode = "question";
-      window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
-window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
-
-render();
+      render();
       return;
     }
 
     if (state.mode === "question"){
       await playTransitionQA();
       state.mode = "answer";
-      window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
-window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
-
-render();
+      render();
       return;
     }
 
     const nxt = nextIndex();
     if (nxt === null) return;
     state.mode = "question";
-    window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
-window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
+    render();
 
-render();
   } finally {
     setTimeout(() => {
       tapLocked = false;
