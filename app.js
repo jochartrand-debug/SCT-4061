@@ -50,9 +50,15 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "distance ÷ temps",
+    "q1": "Distance ÷ Temps",
     "q2": "",
-    "a1": "vitesse",
+    "a1": "Vitesse",
+    "a2_html": ""
+  },
+{
+    "q1": "mètre ÷ seconde",
+    "q2": "",
+    "a1": "m/s",
     "a2_html": ""
   },
 {
@@ -164,11 +170,11 @@ function renderExprBoldNoOp(s){
   // Rend:
   // - "A x B" / "A × B" : A et B en gras, × non gras
   // - "A ÷ B" : A et B en gras, ÷ non gras
-  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
+  // - "A-heure" : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
-  // Normalise × ÷ x (sans casser des mots, ex: "Lux")
+  // Normalisation
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
@@ -178,38 +184,36 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
-  // 1) Multiplication (espaces autour)
+  // Multiplication
   let parts = norm.split(/\s+×\s+/);
   if (parts.length > 1){
     let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let k = 1; k < parts.length; k++){
-      html += ` <span class="mult">×</span> <span class="qb">${esc(parts[k])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += ` <span class="mult" style="font-weight:normal!important">×</span> <span class="qb">${esc(parts[i])}</span>`;
     }
     return html;
   }
 
-  // 2) Division (espaces autour)
+  // Division
   parts = norm.split(/\s+÷\s+/);
   if (parts.length > 1){
     let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let k = 1; k < parts.length; k++){
-      // style inline pour forcer non-gras même si .q-line1 est en gras
-      html += ` <span class="div" style="font-weight:400">÷</span> <span class="qb">${esc(parts[k])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += ` <span class="div" style="font-weight:normal!important">÷</span> <span class="qb">${esc(parts[i])}</span>`;
     }
     return html;
   }
 
-  // 3) Composés avec trait d'union (sans espaces)
-  const hyParts = norm.split(/-/);
-  if (hyParts.length > 1){
-    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
-    for (let k = 1; k < hyParts.length; k++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
+  // Trait d’union
+  const hy = norm.split(/-/);
+  if (hy.length > 1){
+    let html = `<span class="qb">${esc(hy[0])}</span>`;
+    for (let i = 1; i < hy.length; i++){
+      html += `<span class="hyph" style="font-weight:normal!important">-</span><span class="qb">${esc(hy[i])}</span>`;
     }
     return html;
   }
 
-  // 4) Texte simple
   return `<span class="qb">${esc(norm)}</span>`;
 }
 
