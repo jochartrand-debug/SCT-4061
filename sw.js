@@ -1,4 +1,4 @@
-const CACHE_NAME = "unites-mesure-v30";
+const CACHE_NAME = "unites-mesure-v31";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,7 +8,8 @@ const ASSETS = [
   "./sw.js",
   "./assets/accueil.png",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./fonts/STIXTwoText-Italic.ttf"
 ];
 
 self.addEventListener("install", e => {
@@ -17,7 +18,13 @@ self.addEventListener("install", e => {
 });
 
 self.addEventListener("activate", e => {
-  e.waitUntil(self.clients.claim());
+  e.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => (k === CACHE_NAME ? null : caches.delete(k))));
+      await self.clients.claim();
+    })()
+  );
 });
 
 self.addEventListener("fetch", e => {
