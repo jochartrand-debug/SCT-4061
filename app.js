@@ -50,6 +50,12 @@ const DATA = [
     "a2_html": ""
   },
 {
+    "q1": "joule ÷ seconde",
+    "q2": "",
+    "a1": "watt",
+    "a2_html": ""
+  },
+{
     "q1": "ampère x heure",
     "q2": "",
     "a1": "Ah",
@@ -78,6 +84,12 @@ const DATA = [
     "q2": "(W)",
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
+  },
+{
+    "q1": "seconde",
+    "q2": "(s)",
+    "a1": "Temps",
+    "a2_html": "(<span class=\"italic\">t</span>)"
   }
 ];
 
