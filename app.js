@@ -8,73 +8,73 @@ let tapLocked = false;
 
 const DATA = [
   {
-    "q1": "Newton",
+    "q1": "newton",
     "q2": "(N)",
     "a1": "Force",
     "a2_html": "(<span class=\"italic\">F</span>)"
   },
   {
-    "q1": "Coulomb",
+    "q1": "coulomb",
     "q2": "(C)",
     "a1": "Charge",
     "a2_html": "(<span class=\"italic\">Q</span>)"
   },
   {
-    "q1": "Ampère-heure",
+    "q1": "ampère-heure",
     "q2": "(Ah)",
     "a1": "Charge",
     "a2_html": "(<span class=\"italic\">Q</span>)"
   },
   {
-    "q1": "Ampère",
+    "q1": "ampère",
     "q2": "(A)",
     "a1": "Courant",
     "a2_html": "(<span class=\"italic\">I</span>)"
   },
   {
-    "q1": "Volt",
+    "q1": "volt",
     "q2": "(V)",
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
   {
-    "q1": "Volt x Ampère",
+    "q1": "volt x ampère",
     "q2": "",
     "a1": "Watt",
     "a2_html": ""
   },
   {
-    "q1": "Watt x heure",
+    "q1": "watt x heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
   },
 {
-    "q1": "Ampère x heure",
+    "q1": "ampère x heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
   },
   {
-    "q1": "Joule",
+    "q1": "joule",
     "q2": "(J)",
     "a1": "Énergie",
     "a2_html": "(<span class=\"italic\">E</span>)"
   },
   {
-    "q1": "Watt-heure",
+    "q1": "watt-heure",
     "q2": "(Wh)",
     "a1": "Énergie",
     "a2_html": "(<span class=\"italic\">E</span>)"
   },
   {
-    "q1": "Kilogramme",
+    "q1": "kilogramme",
     "q2": "(kg)",
     "a1": "Masse",
     "a2_html": "(<span class=\"italic\">m</span>)"
   },
   {
-    "q1": "Watt",
+    "q1": "watt",
     "q2": "(W)",
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
