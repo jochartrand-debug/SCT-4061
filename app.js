@@ -184,12 +184,15 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
+  // Style opérateur : force une police "normale" (au cas où la ligne utilise une police bold-only)
+  const OP_STYLE = 'font-weight:400!important;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important';
+
   // Multiplication
   let parts = norm.split(/\s+×\s+/);
   if (parts.length > 1){
     let html = `<span class="qb">${esc(parts[0])}</span>`;
     for (let i = 1; i < parts.length; i++){
-      html += ` <span class="mult" style="font-weight:normal!important">×</span> <span class="qb">${esc(parts[i])}</span>`;
+      html += ` <span class="mult" style="${OP_STYLE}">×</span> <span class="qb">${esc(parts[i])}</span>`;
     }
     return html;
   }
@@ -199,7 +202,7 @@ function renderExprBoldNoOp(s){
   if (parts.length > 1){
     let html = `<span class="qb">${esc(parts[0])}</span>`;
     for (let i = 1; i < parts.length; i++){
-      html += ` <span class="div" style="font-weight:normal!important">÷</span> <span class="qb">${esc(parts[i])}</span>`;
+      html += ` <span class="div" style="${OP_STYLE}">÷</span> <span class="qb">${esc(parts[i])}</span>`;
     }
     return html;
   }
@@ -209,7 +212,7 @@ function renderExprBoldNoOp(s){
   if (hy.length > 1){
     let html = `<span class="qb">${esc(hy[0])}</span>`;
     for (let i = 1; i < hy.length; i++){
-      html += `<span class="hyph" style="font-weight:normal!important">-</span><span class="qb">${esc(hy[i])}</span>`;
+      html += `<span class="hyph" style="${OP_STYLE}">-</span><span class="qb">${esc(hy[i])}</span>`;
     }
     return html;
   }
