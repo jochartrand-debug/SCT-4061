@@ -50,6 +50,12 @@ const DATA = [
     "a2_html": ""
   },
 {
+    "q1": "distance ÷ temps",
+    "q2": "",
+    "a1": "vitesse",
+    "a2_html": ""
+  },
+{
     "q1": "coulomb ÷ seconde",
     "q2": "",
     "a1": "ampère",
@@ -90,6 +96,12 @@ const DATA = [
     "q2": "(W)",
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
+  },
+{
+    "q1": "mètre",
+    "q2": "(m)",
+    "a1": "Distance",
+    "a2_html": "(<span class=\"italic\">d</span>)"
   },
 {
     "q1": "seconde",
@@ -150,30 +162,44 @@ function esc(s){
 
 function renderExprBoldNoOp(s){
   // Rend:
-  // - "A x B" ou "A × B" : A et B en gras, × non gras
+  // - "A x B" / "A × B" : A et B en gras, × non gras
+  // - "A ÷ B" : A et B en gras, ÷ non gras
   // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
-  // Normalise multiplication sans casser des mots (ex: "Lux")
+  if (!txt) return "";
+
+  // Normalise × ÷ x (sans casser des mots, ex: "Lux")
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
+    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/\s+[x×]\s+/g, " × ")
+    .replace(/\s+÷\s+/g, " ÷ ")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!txt) return "";
-
   // 1) Multiplication (espaces autour)
-  const mulParts = norm.split(/\s+×\s+/);
-  if (mulParts.length > 1){
-    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
-    for (let k = 1; k < mulParts.length; k++){
-      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
+  let parts = norm.split(/\s+×\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let k = 1; k < parts.length; k++){
+      html += ` <span class="mult">×</span> <span class="qb">${esc(parts[k])}</span>`;
     }
     return html;
   }
 
-  // 2) Composés avec trait d'union (sans espaces)
+  // 2) Division (espaces autour)
+  parts = norm.split(/\s+÷\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let k = 1; k < parts.length; k++){
+      // style inline pour forcer non-gras même si .q-line1 est en gras
+      html += ` <span class="div" style="font-weight:400">÷</span> <span class="qb">${esc(parts[k])}</span>`;
+    }
+    return html;
+  }
+
+  // 3) Composés avec trait d'union (sans espaces)
   const hyParts = norm.split(/-/);
   if (hyParts.length > 1){
     let html = `<span class="qb">${esc(hyParts[0])}</span>`;
@@ -183,9 +209,10 @@ function renderExprBoldNoOp(s){
     return html;
   }
 
-  // 3) Texte simple
+  // 4) Texte simple
   return `<span class="qb">${esc(norm)}</span>`;
 }
+
 
 function render(){
   card.classList.remove("home","question","answer");
