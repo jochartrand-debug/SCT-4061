@@ -40,7 +40,7 @@ const DATA = [
   {
     "q1": "volt x ampère",
     "q2": "",
-    "a1": "Watt",
+    "a1": "watt",
     "a2_html": ""
   },
   {
