@@ -37,6 +37,12 @@ const DATA = [
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
+ {
+    "q1": "watt x seconde",
+    "q2": "",
+    "a1": "joule",
+    "a2_html": ""
+  },
   {
     "q1": "volt x ampère",
     "q2": "",
@@ -167,14 +173,13 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Rend:
-  // - "A x B" / "A × B" : A et B en gras, × non gras
-  // - "A ÷ B" : A et B en gras, ÷ non gras
-  // - "A-heure" : mots en gras, trait d’union non gras
+  // Principe ROBUSTE :
+  // - La ligne N'EST PAS en gras
+  // - Seuls les opérandes sont en <strong>
+  // - Les opérateurs (× ÷ -) restent TOUJOURS non gras
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
-  // Normalisation
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
@@ -184,15 +189,12 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
-  // Style opérateur : force une police "normale" (au cas où la ligne utilise une police bold-only)
-  const OP_STYLE = 'font-weight:400!important;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important';
-
   // Multiplication
   let parts = norm.split(/\s+×\s+/);
   if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    let html = `<strong class="qb">${esc(parts[0])}</strong>`;
     for (let i = 1; i < parts.length; i++){
-      html += ` <span class="mult" style="${OP_STYLE}">×</span> <span class="qb">${esc(parts[i])}</span>`;
+      html += ` <span class="op">×</span> <strong class="qb">${esc(parts[i])}</strong>`;
     }
     return html;
   }
@@ -200,9 +202,9 @@ function renderExprBoldNoOp(s){
   // Division
   parts = norm.split(/\s+÷\s+/);
   if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    let html = `<strong class="qb">${esc(parts[0])}</strong>`;
     for (let i = 1; i < parts.length; i++){
-      html += ` <span class="div" style="${OP_STYLE}">÷</span> <span class="qb">${esc(parts[i])}</span>`;
+      html += ` <span class="op">÷</span> <strong class="qb">${esc(parts[i])}</strong>`;
     }
     return html;
   }
@@ -210,14 +212,14 @@ function renderExprBoldNoOp(s){
   // Trait d’union
   const hy = norm.split(/-/);
   if (hy.length > 1){
-    let html = `<span class="qb">${esc(hy[0])}</span>`;
+    let html = `<strong class="qb">${esc(hy[0])}</strong>`;
     for (let i = 1; i < hy.length; i++){
-      html += `<span class="hyph" style="${OP_STYLE}">-</span><span class="qb">${esc(hy[i])}</span>`;
+      html += `<span class="op">-</span><strong class="qb">${esc(hy[i])}</strong>`;
     }
     return html;
   }
 
-  return `<span class="qb">${esc(norm)}</span>`;
+  return `<strong class="qb">${esc(norm)}</strong>`;
 }
 
 
