@@ -173,10 +173,10 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Principe ROBUSTE :
-  // - La ligne N'EST PAS en gras
-  // - Seuls les opérandes sont en <strong>
-  // - Les opérateurs (× ÷ -) restent TOUJOURS non gras
+  // Objectif :
+  // - Opérateurs (× ÷ -) JAMAIS en gras
+  // - Opérandes seulement en gras
+  // - Robuste même si .q-line1 est en gras : on force un wrapper en normal
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
@@ -189,37 +189,43 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
-  // Multiplication
+  const WRAP_START = `<span class="expr" style="font-weight:400">`;
+  const WRAP_END = `</span>`;
+  const BOLD = (t) => `<span class="qb" style="font-weight:700">${esc(t)}</span>`;
+  const OP = (ch, cls) => `<span class="${cls}" style="font-weight:400">${ch}</span>`;
+
+  // 1) Multiplication
   let parts = norm.split(/\s+×\s+/);
   if (parts.length > 1){
-    let html = `<strong class="qb">${esc(parts[0])}</strong>`;
+    let html = WRAP_START + BOLD(parts[0]);
     for (let i = 1; i < parts.length; i++){
-      html += ` <span class="op">×</span> <strong class="qb">${esc(parts[i])}</strong>`;
+      html += ` ${OP("×","mult")} ${BOLD(parts[i])}`;
     }
-    return html;
+    return html + WRAP_END;
   }
 
-  // Division
+  // 2) Division
   parts = norm.split(/\s+÷\s+/);
   if (parts.length > 1){
-    let html = `<strong class="qb">${esc(parts[0])}</strong>`;
+    let html = WRAP_START + BOLD(parts[0]);
     for (let i = 1; i < parts.length; i++){
-      html += ` <span class="op">÷</span> <strong class="qb">${esc(parts[i])}</strong>`;
+      html += ` ${OP("÷","div")} ${BOLD(parts[i])}`;
     }
-    return html;
+    return html + WRAP_END;
   }
 
-  // Trait d’union
+  // 3) Trait d’union (sans espaces)
   const hy = norm.split(/-/);
   if (hy.length > 1){
-    let html = `<strong class="qb">${esc(hy[0])}</strong>`;
+    let html = WRAP_START + BOLD(hy[0]);
     for (let i = 1; i < hy.length; i++){
-      html += `<span class="op">-</span><strong class="qb">${esc(hy[i])}</strong>`;
+      html += `${OP("-","hyph")}${BOLD(hy[i])}`;
     }
-    return html;
+    return html + WRAP_END;
   }
 
-  return `<strong class="qb">${esc(norm)}</strong>`;
+  // 4) Texte simple
+  return WRAP_START + BOLD(norm) + WRAP_END;
 }
 
 
