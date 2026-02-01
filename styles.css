@@ -68,25 +68,28 @@ body{
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-.screen{
+.screen {
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   place-items: center;
+  padding: 0;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.card{
+/* Carte pédagogique */
+.card {
   width: min(92vw, 980px);
   min-height: 70vh;
-  display: grid;
-  place-items: center;
-  border-radius: 18px;
-  padding: 18px;
-  position: relative;
-}
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: var(--pad);
+ 
 
 
 
