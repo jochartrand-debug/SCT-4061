@@ -113,7 +113,7 @@ const DATA = [
     "q1": "mètre",
     "q2": "(m)",
     "a1": "Distance",
-    "a2_html": "(<span class=\"italic\">P</span>)"
+    "a2_html": "(<span class=\"italic\">d</span>)"
   },{
     "q1": "seconde",
     "q2": "(s)",
