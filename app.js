@@ -37,6 +37,12 @@ const DATA = [
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
+ {
+    "q1": "watt x seconde",
+    "q2": "",
+    "a1": "joule",
+    "a2_html": ""
+  },
   {
     "q1": "volt x ampère",
     "q2": "",
@@ -50,13 +56,25 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "coulomb ÷ seconde",
+    "q1": "Distance : Temps",
+    "q2": "",
+    "a1": "Vitesse",
+    "a2_html": ""
+  },
+{
+    "q1": "mètre : seconde",
+    "q2": "",
+    "a1": "m/s",
+    "a2_html": ""
+  },
+{
+    "q1": "coulomb : seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
 {
-    "q1": "joule ÷ seconde",
+    "q1": "joule : seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
@@ -90,6 +108,12 @@ const DATA = [
     "q2": "(W)",
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
+  },
+{
+    "q1": "mètre",
+    "q2": "(m)",
+    "a1": "Distance",
+    "a2_html": "(<span class=\"italic\">d</span>)"
   },
 {
     "q1": "seconde",
@@ -149,10 +173,8 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Objectif :
-  // - Opérateurs (× ÷ -) JAMAIS en gras
-  // - Opérandes seulement en gras (via .qb)
-  // - Pas d'espaces "texte" autour des opérateurs (évite décentrage iOS)
+  // Solution A : une seule chaîne de texte (pas de <span>), centrage stable.
+  // Contrainte : opérateurs (× ÷ -) non gras gérés par une police composite via unicode-range (CSS).
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
@@ -166,39 +188,9 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
-  // 1) Multiplication
-  let parts = norm.split(/\s+×\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
-    }
-    return `<span class="expr-wrapper">${html}</span>`;
-  }
-
-  // 2) Division
-  parts = norm.split(/\s+÷\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
-    }
-    return `<span class="expr-wrapper">${html}</span>`;
-  }
-
-  // 3) Trait d’union (sans espaces)
-  const hy = norm.split(/-/);
-  if (hy.length > 1){
-    let html = `<span class="qb">${esc(hy[0])}</span>`;
-    for (let i = 1; i < hy.length; i++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
-    }
-    return `<span class="expr-wrapper">${html}</span>`;
-  }
-
-  // 4) Texte simple
-  return `<span class="expr-wrapper"><span class="qb">${esc(norm)}</span></span>`;
+  return esc(norm);
 }
+
 
 function render(){
   card.classList.remove("home","question","answer");
@@ -235,7 +227,6 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // reset transform for measurement
   content.style.transform = "none";
   content.style.transformOrigin = "50% 50%";
 
@@ -246,36 +237,19 @@ function fitToCircle(){
   const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
   const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
-  // Mesure robuste : clone du contenu en "max-content" hors-écran
-  const clone = content.cloneNode(true);
-  clone.style.position = "absolute";
-  clone.style.visibility = "hidden";
-  clone.style.left = "-10000px";
-  clone.style.top = "0";
-  clone.style.width = "max-content";
-  clone.style.maxWidth = "none";
-  clone.style.whiteSpace = "nowrap";
-  clone.style.transform = "none";
-  document.body.appendChild(clone);
+  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
+  if(!lines.length) return;
 
-  const rect = clone.getBoundingClientRect();
-  const neededW = Math.ceil(rect.width) + 6;   // marge kerning/arrondis iOS
-  const neededH = Math.ceil(rect.height) + 2;
-
-  document.body.removeChild(clone);
+  let neededW = 0;
+  lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
+  const neededH = content.scrollHeight;
 
   let s = 1;
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  // Autorise un scale plus petit pour les très longues expressions
-  s = Math.max(0.25, Math.min(1, s)) * 0.99;
-
-  // Applique le scale tout en préservant le centrage horizontal parfait
-  content.style.transform = `translate(-50%, -50%) scale(${s})`;
-  content.style.position = "absolute";
-  content.style.left = "50%";
-  content.style.top = "50%";
+  s = Math.max(0.5, Math.min(1, s)) * 0.99;
+  content.style.transform = `translateZ(0) scale(${s})`;
 }
 
 function scheduleFit(){
