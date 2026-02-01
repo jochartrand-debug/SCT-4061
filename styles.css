@@ -561,4 +561,8 @@ body{
 .a-line2{
   opacity: 0.9; /* ajuste librement : 0.85, 0.8, etc. */
 }
+/* ===== Opacité 2e ligne des RÉPONSES (optionnelle) ===== */
+.a-line2{
+  opacity: 0.8; /* ajuste librement : 0.85, 0.8, etc. */
+}
 
