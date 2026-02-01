@@ -102,6 +102,10 @@ body{
   border-radius: 18px;
   padding: 18px;
   position: relative;
+
+  touch-action: none;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
 }
 
 

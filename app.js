@@ -318,42 +318,68 @@ async function handleTap(){
   }
 }
 
-// Tap + swipe (haut/bas/gauche/droite) : même effet qu'un tap (v63)
-// Objectif: permettre de swiper pour changer d'écran, sans ajouter de nouvelle logique.
-// On déclenche handleTap() autant sur un tap que sur un swipe.
-// Protection contre "ghost click" iOS incluse.
-let __pStartX = 0, __pStartY = 0, __pMoved = false, __pActive = false, __pType = "mouse";
+// Tap + swipe (haut/bas/gauche/droite) : même effet qu'un tap (v64)
+// Version plus robuste iOS/PWA: on utilise aussi touchstart/touchend (PointerEvents parfois capricieux).
+// - Tout geste (tap ou swipe) déclenche handleTap() à la fin.
+// - Empêche les "ghost clicks" après un touchend.
+// - Ignore le multi-touch.
 let __suppressClickUntil = 0;
+let __tsX = 0, __tsY = 0, __tMoved = false, __tActive = false;
 
-card.addEventListener("pointerdown", (e) => {
-  if (!e.isPrimary) return;
-  __pType = e.pointerType || "mouse";
-  __pStartX = e.clientX;
-  __pStartY = e.clientY;
-  __pMoved = false;
-  __pActive = true;
-}, { passive: true });
+const __T_MOVE_EPS = 6; // px (détection simple de mouvement)
 
-card.addEventListener("pointermove", (e) => {
-  if (!__pActive || !e.isPrimary) return;
-  const dx = e.clientX - __pStartX;
-  const dy = e.clientY - __pStartY;
-  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) __pMoved = true;
-}, { passive: true });
+const __lockedTap = __withTapLock(handleTap, 350);
 
+// Pointer (desktop) : click/tap classique
 card.addEventListener("pointerup", (e) => {
-  // Empêche un click synthétique après un swipe sur iOS
+  if ((e.pointerType || "mouse") === "touch") return; // touch géré par touchend
   e.preventDefault();
-  __suppressClickUntil = Date.now() + 450;
-
-  // Tap ou swipe -> même action
-  __pActive = false;
-  handleTap().catch(console.error);
+  __lockedTap().catch(console.error);
 }, { passive: false });
 
+// Touch (iOS / PWA)
+card.addEventListener("touchstart", (e) => {
+  if (!e.touches || e.touches.length !== 1) return;
+  const t = e.touches[0];
+  __tsX = t.clientX;
+  __tsY = t.clientY;
+  __tMoved = false;
+  __tActive = true;
+}, { passive: true });
+
+card.addEventListener("touchmove", (e) => {
+  if (!__tActive || !e.touches || e.touches.length !== 1) return;
+  const t = e.touches[0];
+  const dx = t.clientX - __tsX;
+  const dy = t.clientY - __tsY;
+  if (Math.abs(dx) > __T_MOVE_EPS || Math.abs(dy) > __T_MOVE_EPS) __tMoved = true;
+
+  // Comme l'app ne scroll pas, on peut empêcher Safari d'annuler les events (et d'interpréter comme scroll).
+  // Ça rend le swipe beaucoup plus fiable sur iPhone.
+  if (__tMoved) e.preventDefault();
+}, { passive: false });
+
+card.addEventListener("touchend", (e) => {
+  if (!__tActive) return;
+
+  // Empêche un click synthétique après un swipe/tap sur iOS
+  e.preventDefault();
+  __suppressClickUntil = Date.now() + 500;
+
+  __tActive = false;
+  __lockedTap().catch(console.error);
+}, { passive: false });
+
+// Sécurité: bloque le "ghost click" (surtout après un swipe)
 card.addEventListener("click", (e) => {
   if (Date.now() < __suppressClickUntil) {
     e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  e.preventDefault();
+  __lockedTap().catch(console.error);
+}, { passive: false });
     e.stopPropagation();
     return;
   }
