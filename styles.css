@@ -424,13 +424,29 @@ body{
 .q-line2,.a-line2{ white-space:normal; }
 
 
-/* === Operators non gras (solution robuste) === */
-.expr{
-  display: inline-block;
-  white-space: nowrap;
+/* === iOS fix : centrage fiable des expressions avec opérateurs === */
+.card.question .q-line1, .card.answer .a-line1{
+  text-align: center !important;
+  width: 100% !important;
 }
-.expr .op{
+.card.question .q-line1 .expr,
+.card.answer  .a-line1 .expr{
+  display: inline-block !important;
+  white-space: nowrap !important;
+}
+
+/* Opérateurs : non gras, sans padding (l'espacement vient des espaces autour de × ÷ dans le texte) */
+.card.question .q-line1 .op,
+.card.answer  .a-line1 .op{
   font-weight: 400 !important;
-  font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  padding: 0 0.18em;
+  font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Trait d'union : jamais d'espace */
+.card.question .q-line1 .op-hyph,
+.card.answer  .a-line1 .op-hyph{
+  padding: 0 !important;
+  margin: 0 !important;
 }

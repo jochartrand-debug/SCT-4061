@@ -38,19 +38,19 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
  {
-    "q1": "watt × seconde",
+    "q1": "watt x seconde",
     "q2": "",
     "a1": "joule",
     "a2_html": ""
   },
   {
-    "q1": "volt × ampère",
+    "q1": "volt x ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt × heure",
+    "q1": "watt x heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
@@ -80,7 +80,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "ampère × heure",
+    "q1": "ampère x heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
@@ -173,24 +173,27 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Texte centré stable + opérateurs non gras via spans minimales
+  // Texte centré stable + opérateurs non gras via spans minimales (sans padding: on utilise les espaces du texte)
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
   const norm = txt
+    // Normalisation multiplication / division AVEC espaces
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/\s+[x×]\s+/g, " × ")
     .replace(/\s+÷\s+/g, " ÷ ")
+    // Trait d'union : JAMAIS d'espaces ajoutés
+    .replace(/\s*-\s*/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 
   // Échappe tout, puis réinjecte uniquement les opérateurs dans des spans non gras
   let html = esc(norm)
-    .replace(/×/g, '<span class="op">×</span>')
-    .replace(/÷/g, '<span class="op">÷</span>')
-    .replace(/-/g, '<span class="op">-</span>');
+    .replace(/×/g, '<span class="op op-mult">×</span>')
+    .replace(/÷/g, '<span class="op op-div">÷</span>')
+    .replace(/-/g, '<span class="op op-hyph">-</span>');
 
   return `<span class="expr">${html}</span>`;
 }
@@ -238,8 +241,8 @@ function fitToCircle(){
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.84);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.90);
 
   const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
   if(!lines.length) return;
@@ -252,7 +255,7 @@ function fitToCircle(){
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
+  s = Math.max(0.25, Math.min(1, s)) * 0.99;
   content.style.transform = `translateZ(0) scale(${s})`;
 }
 
