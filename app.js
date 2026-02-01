@@ -37,50 +37,50 @@ const DATA = [
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
- {
-    "q1": "watt x seconde",
-    "q2": "",
-    "a1": "joule",
-    "a2_html": ""
-  },
   {
-    "q1": "volt x ampère",
+    "q1": "volt × ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt x heure",
+    "q1": "watt × heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
   },
 {
-    "q1": "Distance : Temps",
-    "q2": "",
-    "a1": "Vitesse",
-    "a2_html": ""
-  },
-{
-    "q1": "mètre : seconde",
-    "q2": "",
-    "a1": "m/s",
-    "a2_html": ""
-  },
-{
-    "q1": "coulomb : seconde",
+    "q1": "coulomb/seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
 {
-    "q1": "joule : seconde",
+    "q1": "joule/seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
 {
-    "q1": "ampère x heure",
+    "q1": "mètre/seconde",
+    "q2": "",
+    "a1": "m/s",
+    "a2_html": ""
+  },
+{
+    "q1": "Distance/Temps",
+    "q2": "",
+    "a1": "Vitesse",
+    "a2_html": ""
+  },
+{
+    "q1": "watt × seconde",
+    "q2": "",
+    "a1": "joule",
+    "a2_html": ""
+  },
+{
+    "q1": "ampère × heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
@@ -109,13 +109,12 @@ const DATA = [
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
   },
-{
+ {
     "q1": "mètre",
     "q2": "(m)",
     "a1": "Distance",
     "a2_html": "(<span class=\"italic\">d</span>)"
-  },
-{
+  },{
     "q1": "seconde",
     "q2": "(s)",
     "a1": "Temps",
@@ -172,77 +171,103 @@ function esc(s){
     .replaceAll(">","&gt;");
 }
 
-function renderExprBoldNoOp(s){
-  // Objectif :
-  // - Opérateurs (× ÷ -) JAMAIS en gras
-  // - Opérandes seulement en gras
-  // - Robuste même si .q-line1 est en gras : on force un wrapper en normal
-  const txt = (s ?? "").trim();
-  if (!txt) return "";
+function htmlToText(s){
+  const div = document.createElement("div");
+  div.innerHTML = (s ?? "").toString();
+  return (div.textContent || "").trim();
+}
 
+function renderLine1HTML(s){
+  // Option B: fraction empilée si exactement un "/" (ex: coulomb/seconde)
+  const txt = htmlToText(s);
+  // Cas spécial: on veut afficher "m/s" en une seule ligne (pas en fraction empilée)
+  if (txt.trim().toLowerCase() === "m/s"){
+    return `<span class="qb">m</span><span class="op slash">/</span><span class="qb">s</span>`;
+  }
+  const parts = txt.split("/");
+  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
+    return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
+  }
+
+  // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
+  let out = "";
+  let buf = "";
+  const flush = () => {
+    if(buf){
+      out += `<span class="qb">${esc(buf)}</span>`;
+      buf = "";
+    }
+  };
+
+  for(let i=0;i<txt.length;i++){
+    const ch = txt[i];
+    if(ch === "×" || ch === "÷" || ch === "-"){
+      flush();
+      out += `<span class="op${ch==="-" ? " hyph":""}">${ch}</span>`;
+    }else{
+      buf += ch;
+    }
+  }
+  flush();
+  return out || `<span class="qb">${esc(txt)}</span>`;
+}
+
+
+function renderExprBoldNoOp(s){
+  // Rend:
+  // - "A x B" ou "A × B" : A et B en gras, × non gras
+  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
+  const txt = (s ?? "").trim();
+  // Normalise multiplication sans casser des mots (ex: "Lux")
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
-    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
-    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ]):([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 ÷ $2")  // NOUVEAU : : devient ÷
     .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+[:\÷]\s+/g, " ÷ ")  // MODIFIÉ : inclut : et ÷
     .replace(/\s+/g, " ")
     .trim();
 
-  const WRAP_START = `<span class="expr" style="font-weight:400">`;
-  const WRAP_END = `</span>`;
-  const BOLD = (t) => `<span class="qb" style="font-weight:700">${esc(t)}</span>`;
-  const OP = (ch, cls) => `<span class="${cls}" style="font-weight:400">${ch}</span>`;
+  if (!txt) return "";
 
-  // 1) Multiplication
-  let parts = norm.split(/\s+×\s+/);
-  if (parts.length > 1){
-    let html = WRAP_START + BOLD(parts[0]);
-    for (let i = 1; i < parts.length; i++){
-      html += ` ${OP("×","mult")} ${BOLD(parts[i])}`;
+  // 1) Multiplication (espaces autour)
+  const mulParts = norm.split(/\s+×\s+/);
+  if (mulParts.length > 1){
+    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
+    for (let k = 1; k < mulParts.length; k++){
+      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
-  // 2) Division
-  parts = norm.split(/\s+÷\s+/);
-  if (parts.length > 1){
-    let html = WRAP_START + BOLD(parts[0]);
-    for (let i = 1; i < parts.length; i++){
-      html += ` ${OP("÷","div")} ${BOLD(parts[i])}`;
+  // 2) Composés avec trait d'union (sans espaces)
+  const hyParts = norm.split(/-/);
+  if (hyParts.length > 1){
+    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
+    for (let k = 1; k < hyParts.length; k++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
-  // 3) Trait d’union (sans espaces)
-  const hy = norm.split(/-/);
-  if (hy.length > 1){
-    let html = WRAP_START + BOLD(hy[0]);
-    for (let i = 1; i < hy.length; i++){
-      html += `${OP("-","hyph")}${BOLD(hy[i])}`;
-    }
-    return html + WRAP_END;
-  }
-
-  // 4) Texte simple
-  return WRAP_START + BOLD(norm) + WRAP_END;
+  // 3) Texte simple
+  return `<span class="qb">${esc(norm)}</span>`;
 }
-
 
 function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
+
+  const homeImg = document.querySelector(".circle img");
+  if(homeImg){ homeImg.style.display = (state.mode === "home") ? "block" : "none"; }
 
   if (state.mode === "home") return;
 
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = renderExprBoldNoOp(item.q1);
+    const q1 = item.q1 ?? "";
     const q2 = (item.q2 ?? "").trim();
     el.innerHTML = `
-      <div class="q-line1">${q1}</div>
+      <div class="q-line1">${renderLine1HTML(q1)}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
     scheduleFit();
@@ -250,54 +275,17 @@ function render(){
   }
 
   // answer
-  const a1 = esc(item.a1 ?? "");
+  const a1 = item.a1 ?? "";
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
-    <div class="a-line1">${a1}</div>
+    <div class="a-line1">${renderLine1HTML(a1)}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
 }
 
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
-function fitToCircle(){
-  const circle = document.querySelector(".circle");
-  const content = document.getElementById("content");
-  if(!circle || !content) return;
 
-  content.style.transform = "none";
-  content.style.transformOrigin = "50% 50%";
-
-  const cs = getComputedStyle(circle);
-  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
-
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
-  if(!lines.length) return;
-
-  let neededW = 0;
-  lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
-  const neededH = content.scrollHeight;
-
-  let s = 1;
-  if(neededW > 0) s = Math.min(s, availW / neededW);
-  if(neededH > 0) s = Math.min(s, availH / neededH);
-
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
-  content.style.transform = `translateZ(0) scale(${s})`;
-}
-
-function scheduleFit(){
-  requestAnimationFrame(() => {
-    fitToCircle();
-    if (document.fonts && document.fonts.ready){
-      document.fonts.ready.then(() => requestAnimationFrame(fitToCircle)).catch(()=>{});
-    }
-  });
-}
 
 async function handleTap(){
   if (tapLocked) return;
@@ -330,33 +318,12 @@ async function handleTap(){
   }
 }
 
-// Navigation inverse (swipe droite / bas)
-// home: rien
-// question: retour accueil
-// answer: retour question
-async function handleBack(){
-  if (state.mode === "answer"){
-    state.mode = "question";
-    render();
-    await idbSet("state", state);
-    return;
-  }
-  if (state.mode === "question"){
-    state.mode = "home";
-    render();
-    await idbSet("state", state);
-    return;
-  }
-}
-
-
-// Tap + swipe 4 directions (v62)
-// - Gauche / Haut : avancer (même effet que tap)
-// - Droite / Bas  : reculer (answer->question, question->home)
+// Tap + swipe (haut/bas/gauche/droite) : même effet qu'un tap (v63)
+// Objectif: permettre de swiper pour changer d'écran, sans ajouter de nouvelle logique.
+// On déclenche handleTap() autant sur un tap que sur un swipe.
+// Protection contre "ghost click" iOS incluse.
 let __pStartX = 0, __pStartY = 0, __pMoved = false, __pActive = false, __pType = "mouse";
-
-const __SWIPE_MIN = 55;     // px
-const __SWIPE_OFF = 45;     // px tolérance sur l'autre axe
+let __suppressClickUntil = 0;
 
 card.addEventListener("pointerdown", (e) => {
   if (!e.isPrimary) return;
@@ -375,60 +342,23 @@ card.addEventListener("pointermove", (e) => {
 }, { passive: true });
 
 card.addEventListener("pointerup", (e) => {
+  // Empêche un click synthétique après un swipe sur iOS
   e.preventDefault();
+  __suppressClickUntil = Date.now() + 450;
 
-  // Souris / stylet : on garde le tap classique
-  if (__pType !== "touch"){
-    handleTap().catch(console.error);
-    __pActive = false;
-    return;
-  }
-
-  const dx = e.clientX - __pStartX;
-  const dy = e.clientY - __pStartY;
-  const adx = Math.abs(dx);
-  const ady = Math.abs(dy);
-
+  // Tap ou swipe -> même action
   __pActive = false;
-
-  // Pas un vrai swipe -> tap
-  if (!__pMoved){
-    handleTap().catch(console.error);
-    return;
-  }
-
-  // Direction dominante
-  if (adx >= ady){
-    if (adx < __SWIPE_MIN) { handleTap().catch(console.error); return; }
-    if (Math.abs(dy) > __SWIPE_OFF) { handleTap().catch(console.error); return; }
-    if (dx < 0){
-      // gauche -> avancer
-      handleTap().catch(console.error);
-    }else{
-      // droite -> reculer
-      handleBack().catch(console.error);
-    }
-  }else{
-    if (ady < __SWIPE_MIN) { handleTap().catch(console.error); return; }
-    if (Math.abs(dx) > __SWIPE_OFF) { handleTap().catch(console.error); return; }
-    if (dy < 0){
-      // haut -> avancer
-      handleTap().catch(console.error);
-    }else{
-      // bas -> reculer
-      handleBack().catch(console.error);
-    }
-  }
+  handleTap().catch(console.error);
 }, { passive: false });
 
-// Empêche un "ghost tap" après un swipe sur certains iPhone
 card.addEventListener("click", (e) => {
-  if (__pType === "touch" && __pMoved) {
+  if (Date.now() < __suppressClickUntil) {
     e.preventDefault();
     e.stopPropagation();
+    return;
   }
+  // Desktop: clic normal
+  e.preventDefault();
+  handleTap().catch(console.error);
 }, { passive: false });
-window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
-window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
-
 render();
