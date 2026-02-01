@@ -251,9 +251,12 @@ function renderLine1HTML(s){
     return `<span class="qb">m</span><span class="op slash">/</span><span class="qb">s</span>`;
   }
   const parts = txt.split("/");
-  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
-    return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
-  }
+  const t = txt.trim().toLowerCase();
+if (t === "m/s" || t === "c/s" || t === "kg/s" || t === "m³/s") {
+  const [num, den] = txt.trim().split("/");
+  return `<span class="qb">${num}</span><span class="op slash">/</span><span class="qb">${den}</span>`;
+}
+
 
   // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
   let out = "";
