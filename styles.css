@@ -59,7 +59,7 @@
 html, body { height: 100%; margin: 0; }
 
 :root{
-  --question-circle-size: calc(min(78vmin, 640px)*1.2);
+  --question-circle-size: calc(min(78vmin, 640px)*1.15);
 }
 
 body{
@@ -527,5 +527,24 @@ body{
 }
 
 
-/* Slash non gras (cas particulier m/s) */
-.op.slash{ font-weight: 400 !important; }
+/* ===== Patch iOS: plein écran sans décalage vers le bas ===== */
+/* Sur iOS, 100vh peut être "bizarre" à cause de la barre d'adresse.
+   On force une mise en page qui remplit l'écran visible (dvh/svh) et respecte les safe-areas. */
+.screen{
+  min-height: 100svh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Sur téléphone: la carte doit occuper toute la hauteur (sinon impression de décalage). */
+@media (max-width: 700px){
+  .card{
+    width: 100vw;
+    min-height: 100svh;
+    min-height: 100dvh;
+    border-radius: 0;
+    padding-top: calc(18px + env(safe-area-inset-top));
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+}
