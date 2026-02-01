@@ -186,7 +186,7 @@ function renderExprBoldNoOp(s){
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ]):([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 ÷ $2")  // NOUVEAU : : devient ÷
     .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+[:\÷]\s+/g, " ÷ ")  // MODIFIÉ : inclut : et ÷
+    .replace(/\s+[:÷]\s+/g, " ÷ ")  // MODIFIÉ : inclut : et ÷
     .replace(/\s+/g, " ")
     .trim();
 
