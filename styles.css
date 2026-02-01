@@ -86,7 +86,6 @@ body{
 
 /* Conteneur cercle + contenu */
 .circle{
-  position: relative;
   width: min(78vmin, 640px);
   height: min(78vmin, 640px);
   border-radius: 50%;
@@ -111,10 +110,6 @@ body{
 .card.answer #content{ display:block; }
 
 .content{
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -429,28 +424,38 @@ body{
 .q-line2,.a-line2{ white-space:normal; }
 
 
-/* === FIX: centrage fiable ligne 1 + opérateurs non gras === */
-.circle #content{
-  width: 100%;
-  text-align: center;
+/* ===== PATCH v24: centrage stable + opérateurs non gras ===== */
+
+/* Le cercle doit centrer son contenu */
+.circle{
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.circle .q-line1,
-.circle .a-line1{
-  width: 100%;
+/* Le conteneur du texte ne doit pas prendre toute la largeur */
+#content{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-}
-
-.circle .q-line1 .line1-text,
-.circle .a-line1 .line1-text{
-  display: inline-block;
-  white-space: nowrap;
+  width: fit-content;
   max-width: 100%;
+  transform-origin: 50% 50%;
 }
 
-/* Opérateurs (× ÷ -) : non gras */
-.circle .q-line1 .op,
-.circle .a-line1 .op{
+/* Chaque ligne shrink-wrap et se centre */
+.q-line1,.q-line2,.a-line1,.a-line2{
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Opérateurs non gras */
+.op, .mult, .divop, .hyph{
   font-weight: 400 !important;
   font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   font-synthesis: none;
