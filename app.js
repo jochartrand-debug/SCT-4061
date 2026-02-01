@@ -38,13 +38,13 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
   {
-    "q1": "volt x ampère",
+    "q1": "volt × ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt x heure",
+    "q1": "watt × heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
@@ -62,7 +62,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "ampère x heure",
+    "q1": "ampère × heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
@@ -155,11 +155,21 @@ function htmlToText(s){
 }
 
 function renderLine1HTML(s){
-  // Option B: fraction empilée si exactement un "/" (ex: coulomb/seconde)
+  // Option B: fraction empilée si EXACTEMENT un séparateur de division :
+  // - "/" ou "∕" ou "÷" (avec ou sans espaces)
   const txt = htmlToText(s);
-  const parts = txt.split("/");
-  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
-    return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
+
+  // Normalise seulement pour détecter la fraction (sans modifier le texte affiché)
+  const norm = txt.replace(/\s+/g, " ").trim();
+
+  // Détection d'un seul séparateur
+  const divMatches = norm.match(/[\/∕÷]/g) || [];
+  if(divMatches.length === 1){
+    const sep = divMatches[0];
+    const parts = norm.split(sep);
+    if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
+      return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
+    }
   }
 
   // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
@@ -243,7 +253,7 @@ function render(){
       <div class="q-line1">${renderLine1HTML(q1)}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    scheduleFit();
+    
     return;
   }
 

@@ -93,6 +93,7 @@ body{
   place-items: center;
   overflow: hidden;
   padding: 2.5%;
+  position: relative;
 }
 
 /* Cercle blanc seulement pour la QUESTION */
@@ -110,14 +111,20 @@ body{
 .card.answer #content{ display:block; }
 
 .content{
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   text-align:center;
-  width:auto;
-  max-width:100%;
+  width: auto;
+  max-width: 100%;
+  transform: translate(-50%, -50%) translateZ(0) scale(var(--fit-scale, 1));
+  transform-origin: 50% 50%;
   will-change: transform;
+  font-synthesis: none;
 }
 
 .q-line1, .a-line1{
@@ -424,75 +431,27 @@ body{
 .q-line2,.a-line2{ white-space:normal; }
 
 
-/* ===== FINAL: cercle uniquement pour l'image d'accueil ; Q/A sans cercle ===== */
-.card.question .circle,
-.card.answer  .circle{
-  width: 100% !important;
-  height: auto !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+/* Ligne 1 mesurable + opérateurs non gras */
+.q-line1 .line1-text,
+.a-line1 .line1-text{
+  display:inline-block;
+  white-space:nowrap;
+  max-width:100%;
 }
 
-/* Cercle seulement à l'accueil */
-.card.home .circle{
-  width: min(78vmin, 640px) !important;
-  height: min(78vmin, 640px) !important;
-  border-radius: 50% !important;
-  border: 6px solid #fff !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-  background: transparent !important;
-}
-
-/* Évite la superposition: on cache l'image hors accueil */
-.card.question .circle img,
-.card.answer  .circle img{
-  display: none !important;
-}
-
-/* Contenu texte centré sans scale */
-#content, .content{
-  position: static !important;
-  transform: none !important;
-  width: 100%;
-  max-width: 92vw;
-  margin: 0 auto;
-  text-align: center;
-}
-
-/* Espace entre ligne 1 et ligne 2 */
-.q-line1, .a-line1{
-  margin-bottom: 0.5em;
-}
-
-/* Gras mots, opérateurs non gras */
-.qb{ font-weight: 800; }
 .op{
   font-weight: 400 !important;
   font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   font-synthesis: none;
 }
 
-/* Fraction empilée (Option B) */
-.frac{
-  display: inline-grid;
-  grid-template-rows: auto 0.12em auto;
-  align-items: center;
-  justify-items: center;
-  line-height: 1.05;
+
+/* ===== Patch: éviter que l'accent de "É" soit coupé ===== */
+#content, .content{
+  overflow: visible !important;
 }
-.frac .bar{
-  width: 100%;
-  height: 0.12em;
-  background: currentColor;
-}
-.frac .num, .frac .den{
-  white-space: nowrap;
+
+.q-line2, .a-line2{
+  line-height: 1.22;
+  padding-top: 0.05em; /* laisse respirer les accents */
 }

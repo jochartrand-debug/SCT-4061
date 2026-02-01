@@ -1,4 +1,4 @@
-const CACHE_NAME = "unites-mesure-v50";
+const CACHE_NAME = "unites-mesure-v51";
 const ASSETS = [
   "./",
   "./index.html",
