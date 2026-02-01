@@ -13,6 +13,12 @@ const DATA = [
     "a1": "Force",
     "a2_html": "(<span class=\"italic\">F</span>)"
   },
+{
+    "q1": "kilo",
+    "q2": "",
+    "a1": "10<sup>3</sup>",
+    "a2_html": "(<span class=\"italic\">Q</span>)"
+  },
   {
     "q1": "coulomb",
     "q2": "(C)",
