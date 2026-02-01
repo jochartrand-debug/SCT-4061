@@ -37,12 +37,6 @@ const DATA = [
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
- {
-    "q1": "watt x seconde",
-    "q2": "",
-    "a1": "joule",
-    "a2_html": ""
-  },
   {
     "q1": "volt x ampère",
     "q2": "",
@@ -56,25 +50,25 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "Distance : Temps",
+    "q1": "Distance ÷ Temps",
     "q2": "",
     "a1": "Vitesse",
     "a2_html": ""
   },
 {
-    "q1": "mètre : seconde",
+    "q1": "mètre ÷ seconde",
     "q2": "",
     "a1": "m/s",
     "a2_html": ""
   },
 {
-    "q1": "coulomb : seconde",
+    "q1": "coulomb ÷ seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
 {
-    "q1": "joule : seconde",
+    "q1": "joule ÷ seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
@@ -173,60 +167,56 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Objectif :
-  // - Opérateurs (× ÷ -) JAMAIS en gras
-  // - Opérandes seulement en gras
-  // - Robuste même si .q-line1 est en gras : on force un wrapper en normal
+  // Rend:
+  // - "A x B" / "A × B" : A et B en gras, × non gras
+  // - "A ÷ B" : A et B en gras, ÷ non gras
+  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
+  // Normalise × ÷ x (sans casser des mots, ex: "Lux")
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
-    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ]):([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 ÷ $2")  // NOUVEAU : : devient ÷
     .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+[:÷]\s+/g, " ÷ ")  // MODIFIÉ : inclut : et ÷
+    .replace(/\s+÷\s+/g, " ÷ ")
     .replace(/\s+/g, " ")
     .trim();
 
-  const WRAP_START = `<span class="expr" style="font-weight:400">`;
-  const WRAP_END = `</span>`;
-  const BOLD = (t) => `<span class="qb" style="font-weight:700">${esc(t)}</span>`;
-  const OP = (ch, cls) => `<span class="${cls}" style="font-weight:400">${ch}</span>`;
-
-  // 1) Multiplication
+  // 1) Multiplication (espaces autour)
   let parts = norm.split(/\s+×\s+/);
   if (parts.length > 1){
-    let html = WRAP_START + BOLD(parts[0]);
-    for (let i = 1; i < parts.length; i++){
-      html += ` ${OP("×","mult")} ${BOLD(parts[i])}`;
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let k = 1; k < parts.length; k++){
+      html += ` <span class="mult">×</span> <span class="qb">${esc(parts[k])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
-  // 2) Division
+  // 2) Division (espaces autour)
   parts = norm.split(/\s+÷\s+/);
   if (parts.length > 1){
-    let html = WRAP_START + BOLD(parts[0]);
-    for (let i = 1; i < parts.length; i++){
-      html += ` ${OP("÷","div")} ${BOLD(parts[i])}`;
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let k = 1; k < parts.length; k++){
+      // style inline pour forcer non-gras même si .q-line1 est en gras
+      html += `<span class="div" style="font-weight:400">÷</span><span class="qb">${esc(parts[k])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
-  // 3) Trait d’union (sans espaces)
-  const hy = norm.split(/-/);
-  if (hy.length > 1){
-    let html = WRAP_START + BOLD(hy[0]);
-    for (let i = 1; i < hy.length; i++){
-      html += `${OP("-","hyph")}${BOLD(hy[i])}`;
+  // 3) Composés avec trait d'union (sans espaces)
+  const hyParts = norm.split(/-/);
+  if (hyParts.length > 1){
+    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
+    for (let k = 1; k < hyParts.length; k++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
   // 4) Texte simple
-  return WRAP_START + BOLD(norm) + WRAP_END;
+  return `<span class="qb">${esc(norm)}</span>`;
 }
 
 
