@@ -256,6 +256,25 @@ function scheduleFit(){
   });
 }
 
+/* Refit automatique sur changements de taille (desktop + iPhone) */
+(function installRefitHooks(){
+  let raf = null;
+  const refitSoon = () => {
+    if (state.mode === "home") return;
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => fitToCircle());
+  };
+  window.addEventListener("resize", refitSoon, { passive: true });
+  window.addEventListener("orientationchange", refitSoon, { passive: true });
+  try{
+    const ro = new ResizeObserver(refitSoon);
+    const circle = document.querySelector(".circle");
+    const content = document.getElementById("content");
+    if (circle) ro.observe(circle);
+    if (content) ro.observe(content);
+  }catch(e){}
+})();
+
 async function handleTap(){
   if (tapLocked) return;
   tapLocked = true;
