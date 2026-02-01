@@ -1,4 +1,3 @@
-/* ================== POLICES ================== */
 @font-face{
   font-family: "InterRegular";
   src: url("fonts/Inter-Regular.woff2") format("woff2");
@@ -6,6 +5,7 @@
   font-style: normal;
   font-display: swap;
 }
+
 @font-face{
   font-family: "InterSemiBold";
   src: url("fonts/Inter-SemiBold.woff2") format("woff2");
@@ -13,6 +13,7 @@
   font-style: normal;
   font-display: swap;
 }
+
 @font-face{
   font-family: "InterItalic";
   src: url("fonts/Inter-Italic.woff2") format("woff2");
@@ -20,6 +21,15 @@
   font-style: italic;
   font-display: swap;
 }
+
+@font-face{
+  font-family: "InterBold";
+  src: url("fonts/Inter-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @font-face{
   font-family: "InterExtraBold";
   src: url("fonts/Inter-ExtraBold.woff2") format("woff2");
@@ -27,6 +37,17 @@
   font-style: normal;
   font-display: swap;
 }
+
+@font-face{
+  font-family: "BravuraText";
+  src: url("fonts/BravuraText.woff2") format("woff2"),
+       url("fonts/BravuraText.woff") format("woff"),
+       url("fonts/BravuraText.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
 @font-face{
   font-family: "STIXTwoTextItalic";
   src: url("fonts/STIXTwoText-Italic.ttf") format("truetype");
@@ -35,13 +56,15 @@
   font-display: swap;
 }
 
-/* ================== BASE ================== */
-html, body{
-  height: 100%;
-  margin: 0;
+html, body { height: 100%; margin: 0; }
+
+body{
   background:#000;
   color:#fff;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  box-sizing: border-box;
   overflow-x: hidden;
 }
 
@@ -56,87 +79,98 @@ html, body{
 }
 
 .card{
-  width: 100%;
+  width: min(92vw, 980px);
+  min-height: 70vh;
   display: grid;
   place-items: center;
+  border-radius: 18px;
+  padding: 18px;
+  box-sizing: border-box;
   background:#000;
   color:#fff;
 }
 
-/* ================== CERCLE ================== */
+/* Conteneur cercle + contenu */
 .circle{
   width: min(92vmin, 860px);
   height: min(92vmin, 860px);
   border-radius: 50%;
   display: grid;
   place-items: center;
+  overflow: hidden;
   padding: 18px;
   box-sizing: border-box;
 }
 
+/* Cercle blanc pour HOME + QUESTION seulement */
+.card.home .circle,
 .card.question .circle{
   border: 6px solid #fff;
 }
-.card.home .circle,
 .card.answer .circle{
   border: none;
 }
 
-/* ================== CONTENU ================== */
+/* Home image */
+.card.home .home-image{
+  display:block;
+  width: 62%;
+  height: 62%;
+  object-fit: contain;
+}
+.card.question .home-image,
+.card.answer .home-image{ display:none; }
+
+/* Cache le texte sur l'accueil */
+.card.home #content{ display:none; }
+.card.question #content,
+.card.answer #content{ display:block; }
+
 #content{
   width: 100%;
+  max-width: 100%;
   text-align: center;
   will-change: transform;
 }
 
-.content{
-  display: block;
-  width: 100%;
-}
-
-/* ================== LIGNES TEXTE ================== */
-/* ⚠️ PAS de flex : centrage iOS stable */
-.q-line1,
-.a-line1{
-  display: block;
-  width: 100%;
-  text-align: center;
-  white-space: nowrap;
+/* ===== Typo ===== */
+.q-line1, .a-line1{
   font-size: clamp(42px, 7vw, 110px);
   line-height: 1.05;
-  font-weight: 400;
-}
-
-.q-line2,
-.a-line2{
-  display: block;
+  font-weight: 400;      /* important: pas de flex */
+  white-space: nowrap;
   text-align: center;
+  display: block;        /* iOS-safe */
+  width: 100%;
+}
+
+.q-line2, .a-line2{
+  display:block;
   font-size: clamp(32px, 5vw, 70px);
-  font-weight: 400;
   opacity: 0.9;
-}
-
-/* ================== TYPOGRAPHIE ================== */
-.qb{
-  font-family: "InterExtraBold", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  line-height: 1.1;
   font-weight: 400;
+  text-align: center;
 }
 
-.mult,
-.div,
-.hyph{
+/* Gras uniquement sur les opérandes */
+.qb{
+  font-family: "InterExtraBold", "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-weight: 400; /* la fonte ExtraBold porte déjà le gras visuel */
+}
+
+/* Opérateurs: jamais en gras */
+.mult, .div, .hyph{
   font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   font-weight: 400 !important;
   display: inline-block;
 }
 
-/* Espaces optiques autour × ÷ */
-.mult,
-.div{
-  padding: 0 0.18em;
-}
+/* Espacement autour × et ÷ */
+.mult, .div{ padding: 0 0.18em; }
+.hyph{ padding: 0; }
 
-/* ✅ CORRECTION OPTIQUE iOS POUR ÷ */
+/* Correction optique iOS pour ÷ (centrage) */
 .div{
   position: relative;
   left: -0.04em;
@@ -149,23 +183,7 @@ html, body{
   font-weight: 400 !important;
 }
 
-/* ================== HOME ================== */
-.card.home #content{ display:none; }
-
-.card.home .home-image{
-  display:block;
-  width: 62%;
-  height: 62%;
-  object-fit: contain;
-}
-
-/* ================== ANSWER ================== */
-.card.answer{
-  background:#fff !important;
-  color:#000 !important;
-}
-
-/* ================== DIM TRANSITION ================== */
+/* ===== DIM GLOBAL (QUESTION → RÉPONSE seulement) ===== */
 body::before{
   content:"";
   position: fixed;
@@ -185,4 +203,10 @@ body::before{
 }
 @media (prefers-reduced-motion: reduce){
   .flash-answer::before{ animation:none; }
+}
+
+/* Réponse: tuile blanche */
+.card.answer{
+  background:#fff !important;
+  color:#000 !important;
 }
