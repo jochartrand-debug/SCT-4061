@@ -249,16 +249,28 @@ function fitToCircle(){
   if(!lines.length) return;
 
   let neededW = 0;
+  // Mesure robuste: clone hors-écran en "max-content" pour obtenir la largeur intrinsèque réelle
   lines.forEach(l => {
-    // Si la ligne est en flex avec width:100%, scrollWidth peut être égal à clientWidth même si le contenu déborde.
     let w = l.scrollWidth;
+
+    // Si la ligne est en flex + width:100%, scrollWidth peut être trompeur sur iOS.
     if (w <= l.clientWidth + 1){
-      // Mesure plus fiable : somme des largeurs des enfants (qb/mult/div/hyph)
-      let sum = 0;
-      Array.from(l.children).forEach(ch => { sum += ch.getBoundingClientRect().width; });
-      // Ajoute une petite marge (arrondis/kerning iOS)
-      w = Math.max(w, Math.ceil(sum) + 2);
+      const clone = l.cloneNode(true);
+      clone.style.position = "absolute";
+      clone.style.visibility = "hidden";
+      clone.style.left = "-10000px";
+      clone.style.top = "0";
+      clone.style.width = "max-content";
+      clone.style.maxWidth = "none";
+      clone.style.whiteSpace = "nowrap";
+      clone.style.display = "inline-flex";
+      clone.style.justifyContent = "flex-start";
+      clone.style.transform = "none";
+      document.body.appendChild(clone);
+      w = Math.ceil(clone.getBoundingClientRect().width) + 4; // marge kerning/arrondis iOS
+      document.body.removeChild(clone);
     }
+
     neededW = Math.max(neededW, w);
   });
   const neededH = content.scrollHeight;
@@ -267,7 +279,7 @@ function fitToCircle(){
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
+  s = Math.max(0.35, Math.min(1, s)) * 0.99;
   content.style.transform = `translateZ(0) scale(${s})`;
 }
 
