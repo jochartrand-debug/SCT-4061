@@ -70,29 +70,39 @@ body{
 
 
 .screen{
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   min-height: 100vh;
+  min-height: 100svh;
   min-height: 100dvh;
+
   display: grid;
   place-items: center;
-  padding: 0;
+
+  /* iOS PWA (standalone) : éviter l'impression de décalage vers le bas */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+
+  box-sizing: border-box;
+
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
 }
 
 
-
 .card{
   width: min(92vw, 980px);
   min-height: 70vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px;
+  display: grid;
+  place-items: center;
   border-radius: 18px;
+  padding: 18px;
   position: relative;
 }
-
 
 
 
@@ -535,3 +545,10 @@ body{
 
 /* Slash non gras (cas particulier m/s) */
 .op.slash{ font-weight: 400 !important; }
+
+
+@media (max-width: 700px){
+  .card{
+    min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+}
