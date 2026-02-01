@@ -91,7 +91,7 @@ body{
   border-radius: 50%;
   display: grid;
   place-items: center;
-  overflow: hidden;
+  overflow: visible;
   padding: 2.5%;
 }
 
@@ -114,6 +114,7 @@ body{
   flex-direction:column;
   align-items:center;
   justify-content:center;
+  padding-top: 0.1em;
   text-align:center;
   width:auto;
   max-width:100%;
@@ -124,7 +125,7 @@ body{
   display:block;
   font-size: clamp(64px, 10vw, 140px);
   font-weight: 750;
-  line-height: 1.05;
+  line-height: 1.12;
 }
 
 .q-line2, .a-line2{
@@ -469,7 +470,7 @@ body{
 
 /* Espace entre ligne 1 et ligne 2 */
 .q-line1, .a-line1{
-  margin-bottom: 0.5em;
+  margin-bottom: 0.35em;
 }
 
 /* Gras mots, opérateurs non gras */
