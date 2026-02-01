@@ -329,7 +329,7 @@ function render(){
 
   // Si a1_html est fourni, on l'utilise tel quel (HTML), pour permettre <sup>…</sup>, etc.
   // Sinon, on utilise le rendu standard (gras + opérateurs non gras + fractions empilées).
-  const a1LineHTML = a1_html ? `<span class="qb">${a1_html}</span>` : renderLine1HTML(a1);
+  const a1LineHTML = a1_html ? `<span class="qb a1html">${a1_html}</span>` : renderLine1HTML(a1);
 
   el.innerHTML = `
     <div class="a-line1">${a1LineHTML}</div>

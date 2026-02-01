@@ -575,7 +575,5 @@ body{
   top: -0.75em;
 }
 
-
-
-
-
+/* ===== a1_html: agrandit uniquement les réponses HTML (+10%) ===== */
+.a1html{ font-size: 1.1em; }
