@@ -38,31 +38,49 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
   {
-    "q1": "volt x ampère",
+    "q1": "volt × ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt x heure",
+    "q1": "watt × heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
   },
 {
-    "q1": "coulomb ÷ seconde",
+    "q1": "coulomb/seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
 {
-    "q1": "joule ÷ seconde",
+    "q1": "joule/seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
 {
-    "q1": "ampère x heure",
+    "q1": "mètre/seconde",
+    "q2": "",
+    "a1": "m/s",
+    "a2_html": ""
+  },
+{
+    "q1": "Distance/Temps",
+    "q2": "",
+    "a1": "Vitesse",
+    "a2_html": ""
+  },
+{
+    "q1": "watt × seconde",
+    "q2": "",
+    "a1": "joule",
+    "a2_html": ""
+  },
+{
+    "q1": "ampère × heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
@@ -91,7 +109,12 @@ const DATA = [
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
   },
-{
+ {
+    "q1": "mètre",
+    "q2": "(m)",
+    "a1": "Distance",
+    "a2_html": "(<span class=\"italic\">d</span>)"
+  },{
     "q1": "seconde",
     "q2": "(s)",
     "a1": "Temps",
@@ -148,14 +171,45 @@ function esc(s){
     .replaceAll(">","&gt;");
 }
 
-function renderA1Special(s){
-  const t = (s ?? "").toString().trim();
-  // Cas particulier demandé : dans la réponse "m/s", le "/" doit être non gras.
-  // (Aucun autre traitement d'opérateur pour les réponses.)
-  if (t.toLowerCase() === "m/s"){
+function htmlToText(s){
+  const div = document.createElement("div");
+  div.innerHTML = (s ?? "").toString();
+  return (div.textContent || "").trim();
+}
+
+function renderLine1HTML(s){
+  // Option B: fraction empilée si exactement un "/" (ex: coulomb/seconde)
+  const txt = htmlToText(s);
+  // Cas spécial: on veut afficher "m/s" en une seule ligne (pas en fraction empilée)
+  if (txt.trim().toLowerCase() === "m/s"){
     return `<span class="qb">m</span><span class="op slash">/</span><span class="qb">s</span>`;
   }
-  return esc(t);
+  const parts = txt.split("/");
+  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
+    return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
+  }
+
+  // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
+  let out = "";
+  let buf = "";
+  const flush = () => {
+    if(buf){
+      out += `<span class="qb">${esc(buf)}</span>`;
+      buf = "";
+    }
+  };
+
+  for(let i=0;i<txt.length;i++){
+    const ch = txt[i];
+    if(ch === "×" || ch === "÷" || ch === "-"){
+      flush();
+      out += `<span class="op${ch==="-" ? " hyph":""}">${ch}</span>`;
+    }else{
+      buf += ch;
+    }
+  }
+  flush();
+  return out || `<span class="qb">${esc(txt)}</span>`;
 }
 
 
@@ -202,15 +256,18 @@ function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
 
+  const homeImg = document.querySelector(".circle img");
+  if(homeImg){ homeImg.style.display = (state.mode === "home") ? "block" : "none"; }
+
   if (state.mode === "home") return;
 
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = renderExprBoldNoOp(item.q1);
+    const q1 = item.q1 ?? "";
     const q2 = (item.q2 ?? "").trim();
     el.innerHTML = `
-      <div class="q-line1">${q1}</div>
+      <div class="q-line1">${renderLine1HTML(q1)}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
     scheduleFit();
@@ -218,54 +275,17 @@ function render(){
   }
 
   // answer
-  const a1 = renderA1Special(item.a1 ?? "");
+  const a1 = item.a1 ?? "";
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
-    <div class="a-line1">${a1}</div>
+    <div class="a-line1">${renderLine1HTML(a1)}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
 }
 
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
-function fitToCircle(){
-  const circle = document.querySelector(".circle");
-  const content = document.getElementById("content");
-  if(!circle || !content) return;
 
-  content.style.transform = "none";
-  content.style.transformOrigin = "50% 50%";
-
-  const cs = getComputedStyle(circle);
-  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
-
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
-  if(!lines.length) return;
-
-  let neededW = 0;
-  lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
-  const neededH = content.scrollHeight;
-
-  let s = 1;
-  if(neededW > 0) s = Math.min(s, availW / neededW);
-  if(neededH > 0) s = Math.min(s, availH / neededH);
-
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
-  content.style.transform = `translateZ(0) scale(${s})`;
-}
-
-function scheduleFit(){
-  requestAnimationFrame(() => {
-    fitToCircle();
-    if (document.fonts && document.fonts.ready){
-      document.fonts.ready.then(() => requestAnimationFrame(fitToCircle)).catch(()=>{});
-    }
-  });
-}
 
 async function handleTap(){
   if (tapLocked) return;
@@ -303,7 +323,5 @@ card.addEventListener("pointerup", (e) => {
   handleTap().catch(console.error);
 });
 
-window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
-window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
 
 render();
