@@ -1,5 +1,11 @@
 let tapLocked = false;
 
+// Unités de mesure — Q/R
+// - Questions au hasard (deck) ; épuisement ; retour accueil
+// - A × B : seul A et B en gras (× non gras)
+// - Deuxième ligne des questions : jamais en gras
+// - Deuxième ligne des réponses : contenu en italique (sans parenthèses)
+
 const DATA = [
   {
     "q1": "newton",
@@ -43,37 +49,37 @@ const DATA = [
     "a1": "Wh",
     "a2_html": ""
   },
-  {
+{
     "q1": "coulomb/seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
-  {
+{
     "q1": "joule/seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
-  {
+{
     "q1": "mètre/seconde",
     "q2": "",
     "a1": "m/s",
     "a2_html": ""
   },
-  {
+{
     "q1": "Distance/Temps",
     "q2": "",
     "a1": "Vitesse",
     "a2_html": ""
   },
-  {
+{
     "q1": "watt × seconde",
     "q2": "",
     "a1": "joule",
     "a2_html": ""
   },
-  {
+{
     "q1": "ampère × heure",
     "q2": "",
     "a1": "Ah",
@@ -103,13 +109,12 @@ const DATA = [
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
   },
-  {
+ {
     "q1": "mètre",
     "q2": "(m)",
     "a1": "Distance",
     "a2_html": "(<span class=\"italic\">d</span>)"
-  },
-  {
+  },{
     "q1": "seconde",
     "q2": "(s)",
     "a1": "Temps",
@@ -121,19 +126,20 @@ const card = document.getElementById("card");
 const el = document.getElementById("content");
 
 const state = {
-  mode: "home",
+  mode: "home", // "home" | "question" | "answer"
   order: [],
   pos: 0,
   i: 0
 };
 
-async function playTransitionQA() {
+// Dim global (QUESTION → RÉPONSE)
+async function playTransitionQA(){
   document.body.classList.add("flash-answer");
   await new Promise(r => setTimeout(r, 140));
   document.body.classList.remove("flash-answer");
 }
 
-function shuffle(arr) {
+function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -141,13 +147,13 @@ function shuffle(arr) {
   return arr;
 }
 
-function startSession() {
+function startSession(){
   state.order = shuffle([...Array(DATA.length).keys()]);
   state.pos = 0;
   state.i = state.order[0] ?? 0;
 }
 
-function nextIndex() {
+function nextIndex(){
   state.pos += 1;
   if (state.pos >= state.order.length) {
     state.mode = "home";
@@ -158,46 +164,47 @@ function nextIndex() {
   return state.i;
 }
 
-function esc(s) {
+function esc(s){
   return (s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
 }
 
-function htmlToText(s) {
+function htmlToText(s){
   const div = document.createElement("div");
   div.innerHTML = (s ?? "").toString();
   return (div.textContent || "").trim();
 }
 
-function renderLine1HTML(s) {
+function renderLine1HTML(s){
+  // Option B: fraction empilée si exactement un "/" (ex: coulomb/seconde)
   const txt = htmlToText(s);
-  
-  if (txt.trim().toLowerCase() === "m/s") {
+  // Cas spécial: on veut afficher "m/s" en une seule ligne (pas en fraction empilée)
+  if (txt.trim().toLowerCase() === "m/s"){
     return `<span class="qb">m/s</span>`;
   }
-  
   const parts = txt.split("/");
-  if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
+  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
     return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
   }
 
+  // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
   let out = "";
   let buf = "";
   const flush = () => {
-    if (buf) {
+    if(buf){
       out += `<span class="qb">${esc(buf)}</span>`;
       buf = "";
     }
   };
 
-  for (let i = 0; i < txt.length; i++) {
+  for(let i=0;i<txt.length;i++){
     const ch = txt[i];
-    if (ch === "×" || ch === "÷" || ch === "-") {
+    if(ch === "×" || ch === "÷" || ch === "-"){
       flush();
-      out += `<span class="op${ch === "-" ? " hyph" : ""}">${ch}</span>`;
-    } else {
+      out += `<span class="op${ch==="-" ? " hyph":""}">${ch}</span>`;
+    }else{
       buf += ch;
     }
   }
@@ -205,14 +212,52 @@ function renderLine1HTML(s) {
   return out || `<span class="qb">${esc(txt)}</span>`;
 }
 
-function render() {
-  card.classList.remove("home", "question", "answer");
+
+function renderExprBoldNoOp(s){
+  // Rend:
+  // - "A x B" ou "A × B" : A et B en gras, × non gras
+  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
+  const txt = (s ?? "").trim();
+  // Normalise multiplication sans casser des mots (ex: "Lux")
+  const norm = txt
+    .replace(/([^\s])×([^\s])/g, "$1 × $2")
+    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
+    .replace(/\s+[x×]\s+/g, " × ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!txt) return "";
+
+  // 1) Multiplication (espaces autour)
+  const mulParts = norm.split(/\s+×\s+/);
+  if (mulParts.length > 1){
+    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
+    for (let k = 1; k < mulParts.length; k++){
+      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
+    }
+    return html;
+  }
+
+  // 2) Composés avec trait d'union (sans espaces)
+  const hyParts = norm.split(/-/);
+  if (hyParts.length > 1){
+    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
+    for (let k = 1; k < hyParts.length; k++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
+    }
+    return html;
+  }
+
+  // 3) Texte simple
+  return `<span class="qb">${esc(norm)}</span>`;
+}
+
+function render(){
+  card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
 
   const homeImg = document.querySelector(".circle img");
-  if (homeImg) {
-    homeImg.style.display = (state.mode === "home") ? "block" : "none";
-  }
+  if(homeImg){ homeImg.style.display = (state.mode === "home") ? "block" : "none"; }
 
   if (state.mode === "home") return;
 
@@ -225,9 +270,11 @@ function render() {
       <div class="q-line1">${renderLine1HTML(q1)}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
+    scheduleFit();
     return;
   }
 
+  // answer
   const a1 = item.a1 ?? "";
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
@@ -236,19 +283,23 @@ function render() {
   `;
 }
 
-async function handleTap() {
+
+// ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
+
+
+async function handleTap(){
   if (tapLocked) return;
   tapLocked = true;
 
   try {
-    if (state.mode === "home") {
+    if (state.mode === "home"){
       startSession();
       state.mode = "question";
       render();
       return;
     }
 
-    if (state.mode === "question") {
+    if (state.mode === "question"){
       await playTransitionQA();
       state.mode = "answer";
       render();
@@ -271,5 +322,6 @@ card.addEventListener("pointerup", (e) => {
   e.preventDefault();
   handleTap().catch(console.error);
 });
+
 
 render();
