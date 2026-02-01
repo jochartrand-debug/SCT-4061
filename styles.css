@@ -576,11 +576,11 @@ body{
 }
 
 /* Agrandit uniquement les réponses HTML (a1_html) */
-.a-line sup,
-.a-line sub,
-.a-line span,
-.a-line i,
-.a-line b {
+.a-line1 sup,
+.a-line1 sub,
+.a-line1 span,
+.a-line1 i,
+.a-line1 b {
   font-size: 3em;
 }
 
