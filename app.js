@@ -141,25 +141,14 @@ function nextIndex(){
   return state.i;
 }
 
-function esc(s){
-  return (s ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;");
-}
-
-function htmlToText(s){
-  const div = document.createElement("div");
-  div.innerHTML = (s ?? "").toString();
-  return (div.textContent || "").trim();
-}
-
 function setExpr(targetSpan, s){
-  // Construit la ligne 1 en DOM, sans .replace() fragile et sans HTML dans les données.
+  // Remplit targetSpan avec du texte + spans .op pour les opérateurs, sans .replace() et sans HTML fragile.
   if(!targetSpan) return;
-  const txt = htmlToText(s);
-  targetSpan.textContent = "";
+  const txt = (s ?? "").toString();
+  targetSpan.textContent = ""; // clear
   const frag = document.createDocumentFragment();
+
+  // Buffer pour regrouper les caractères non-opérateurs
   let buf = "";
   const flush = () => {
     if(buf){
@@ -167,12 +156,13 @@ function setExpr(targetSpan, s){
       buf = "";
     }
   };
-  for(let i=0;i<txt.length;i++){
+
+  for(let i=0; i<txt.length; i++){
     const ch = txt[i];
     if(ch === "×" || ch === "÷" || ch === "-"){
       flush();
       const sp = document.createElement("span");
-      sp.className = "op";
+      sp.className = "op" + (ch === "-" ? " op-hyph" : "");
       sp.textContent = ch;
       frag.appendChild(sp);
     }else{
@@ -183,45 +173,13 @@ function setExpr(targetSpan, s){
   targetSpan.appendChild(frag);
 }
 
-
-function renderExprBoldNoOp(s){
-  // Rend:
-  // - "A x B" ou "A × B" : A et B en gras, × non gras
-  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
-  const txt = (s ?? "").trim();
-  // Normalise multiplication sans casser des mots (ex: "Lux")
-  const norm = txt
-    .replace(/([^\s])×([^\s])/g, "$1 × $2")
-    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
-    .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!txt) return "";
-
-  // 1) Multiplication (espaces autour)
-  const mulParts = norm.split(/\s+×\s+/);
-  if (mulParts.length > 1){
-    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
-    for (let k = 1; k < mulParts.length; k++){
-      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
-    }
-    return html;
-  }
-
-  // 2) Composés avec trait d'union (sans espaces)
-  const hyParts = norm.split(/-/);
-  if (hyParts.length > 1){
-    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
-    for (let k = 1; k < hyParts.length; k++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
-    }
-    return html;
-  }
-
-  // 3) Texte simple
-  return `<span class="qb">${esc(norm)}</span>`;
+function esc(s){
+  return (s ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
 }
+
 
 function render(){
   card.classList.remove("home","question","answer");
@@ -232,26 +190,25 @@ function render(){
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = htmlToText(item.q1 ?? "");
-    const q2 = (item.q2 ?? "").trim();
-
+    const q1 = ((item.q1 ?? "")).toString().trim();
+    const q2 = (item.q2 ?? "").toString().trim();
     el.innerHTML = `
       <div class="q-line1"><span class="line1-text"></span></div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    setExpr(el.querySelector(".q-line1 .line1-text"), q1);
+    setExpr(el.querySelector(".line1-text"), q1);
     scheduleFit();
     return;
   }
 
   // answer
-  const a1 = htmlToText(item.a1 ?? "");
-  const a2 = (item.a2_html ?? "").trim();
+  const a1 = (item.a1 ?? "").toString().trim();
+  const a2 = (item.a2_html ?? "").toString().trim();
   el.innerHTML = `
     <div class="a-line1"><span class="line1-text"></span></div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  setExpr(el.querySelector(".a-line1 .line1-text"), a1);
+  setExpr(el.querySelector(".line1-text"), a1);
   scheduleFit();
 }
 
@@ -262,28 +219,34 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // reset scale
-  content.style.setProperty("--fit-scale","1");
+  // Reset transform for accurate measures
+  content.style.transform = "translate(-50%, -50%)";
+  content.style.transformOrigin = "0 0";
+  content.style.left = "50%";
+  content.style.top = "50%";
 
   const cs = getComputedStyle(circle);
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
+  // Marge conservatrice pour éviter tout rognage sur iPhone
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.84);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.90);
 
   const line1 = content.querySelector(".line1-text");
-  const line2 = content.querySelector(".q-line2,.a-line2");
+  const line2 = content.querySelector(".q-line2, .a-line2");
 
-  const neededW = Math.max(line1 ? line1.scrollWidth : 0, line2 ? line2.scrollWidth : 0, 1);
+  const w1 = line1 ? line1.scrollWidth : 0;
+  const w2 = line2 ? line2.scrollWidth : 0;
+  const neededW = Math.max(w1, w2, 1);
   const neededH = Math.max(content.scrollHeight, 1);
 
   let s = 1;
   s = Math.min(s, availW / neededW);
   s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
-  content.style.setProperty("--fit-scale", String(s));
+  s = Math.max(0.25, Math.min(1, s)) * 0.99;
+  content.style.transform = `translate(-50%, -50%) scale(${s})`;
 }
 
 function scheduleFit(){
@@ -295,7 +258,7 @@ function scheduleFit(){
   });
 }
 
-/* Refit automatique sur changements de taille */
+/* Refit automatique sur changements de taille (desktop + iPhone) */
 (function installRefitHooks(){
   let raf = null;
   const refitSoon = () => {
@@ -303,14 +266,14 @@ function scheduleFit(){
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => fitToCircle());
   };
-  window.addEventListener("resize", refitSoon, { passive:true });
-  window.addEventListener("orientationchange", refitSoon, { passive:true });
+  window.addEventListener("resize", refitSoon, { passive: true });
+  window.addEventListener("orientationchange", refitSoon, { passive: true });
   try{
     const ro = new ResizeObserver(refitSoon);
     const circle = document.querySelector(".circle");
     const content = document.getElementById("content");
-    if(circle) ro.observe(circle);
-    if(content) ro.observe(content);
+    if (circle) ro.observe(circle);
+    if (content) ro.observe(content);
   }catch(e){}
 })();
 
