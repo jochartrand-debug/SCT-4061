@@ -149,18 +149,15 @@ function esc(s){
 }
 
 function htmlToText(s){
-  // Convertit un éventuel HTML (ex: <span>÷</span>) en texte pur, sans regex fragile.
   const div = document.createElement("div");
   div.innerHTML = (s ?? "").toString();
   return (div.textContent || "").trim();
 }
 
-
 function setExpr(targetSpan, s){
-  // Construit du DOM: texte + <span class="op">×</span> etc.
-  // Aucun .replace() et aucun HTML fragile.
+  // Construit la ligne 1 en DOM, sans .replace() fragile et sans HTML dans les données.
   if(!targetSpan) return;
-  const txt = (s ?? "").toString();
+  const txt = htmlToText(s);
   targetSpan.textContent = "";
   const frag = document.createDocumentFragment();
   let buf = "";
@@ -188,54 +185,41 @@ function setExpr(targetSpan, s){
 
 
 function renderExprBoldNoOp(s){
-  // Objectif :
-  // - Opérateurs (× ÷ -) JAMAIS en gras
-  // - Opérandes seulement en gras (via .qb)
-  // - Pas d'espaces "texte" autour des opérateurs (évite décentrage iOS)
+  // Rend:
+  // - "A x B" ou "A × B" : A et B en gras, × non gras
+  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
-  if (!txt) return "";
-
-  // Normalise × ÷ x et espaces
+  // Normalise multiplication sans casser des mots (ex: "Lux")
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
-    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+÷\s+/g, " ÷ ")
     .replace(/\s+/g, " ")
     .trim();
 
-  // 1) Multiplication
-  let parts = norm.split(/\s+×\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
+  if (!txt) return "";
+
+  // 1) Multiplication (espaces autour)
+  const mulParts = norm.split(/\s+×\s+/);
+  if (mulParts.length > 1){
+    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
+    for (let k = 1; k < mulParts.length; k++){
+      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html;
   }
 
-  // 2) Division
-  parts = norm.split(/\s+÷\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
+  // 2) Composés avec trait d'union (sans espaces)
+  const hyParts = norm.split(/-/);
+  if (hyParts.length > 1){
+    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
+    for (let k = 1; k < hyParts.length; k++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html;
   }
 
-  // 3) Trait d’union (sans espaces)
-  const hy = norm.split(/-/);
-  if (hy.length > 1){
-    let html = `<span class="qb">${esc(hy[0])}</span>`;
-    for (let i = 1; i < hy.length; i++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
-    }
-    return `<span class="expr-wrapper">${html}</span>`;
-  }
-
-  // 4) Texte simple
+  // 3) Texte simple
   return `<span class="qb">${esc(norm)}</span>`;
 }
 
@@ -248,27 +232,26 @@ function render(){
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = renderExprBoldNoOp(item.q1);
+    const q1 = htmlToText(item.q1 ?? "");
     const q2 = (item.q2 ?? "").trim();
+
     el.innerHTML = `
       <div class="q-line1"><span class="line1-text"></span></div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    const l1 = el.querySelector(".q-line1 .line1-text");
-    setExpr(l1, q1);
+    setExpr(el.querySelector(".q-line1 .line1-text"), q1);
     scheduleFit();
     return;
   }
 
   // answer
-  const a1 = htmlToText((item.a1 ?? ""));
+  const a1 = htmlToText(item.a1 ?? "");
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
     <div class="a-line1"><span class="line1-text"></span></div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  const l1 = el.querySelector(".a-line1 .line1-text");
-  setExpr(l1, a1);
+  setExpr(el.querySelector(".a-line1 .line1-text"), a1);
   scheduleFit();
 }
 
@@ -279,8 +262,8 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // Réinitialise l'échelle (centrage assuré par CSS translate(-50%,-50%))
-  content.style.setProperty("--fit-scale", "1");
+  // reset scale
+  content.style.setProperty("--fit-scale","1");
 
   const cs = getComputedStyle(circle);
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
@@ -320,8 +303,8 @@ function scheduleFit(){
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => fitToCircle());
   };
-  window.addEventListener("resize", refitSoon, { passive: true });
-  window.addEventListener("orientationchange", refitSoon, { passive: true });
+  window.addEventListener("resize", refitSoon, { passive:true });
+  window.addEventListener("orientationchange", refitSoon, { passive:true });
   try{
     const ro = new ResizeObserver(refitSoon);
     const circle = document.querySelector(".circle");
