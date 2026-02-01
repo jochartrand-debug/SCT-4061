@@ -249,7 +249,18 @@ function fitToCircle(){
   if(!lines.length) return;
 
   let neededW = 0;
-  lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
+  lines.forEach(l => {
+    // Si la ligne est en flex avec width:100%, scrollWidth peut être égal à clientWidth même si le contenu déborde.
+    let w = l.scrollWidth;
+    if (w <= l.clientWidth + 1){
+      // Mesure plus fiable : somme des largeurs des enfants (qb/mult/div/hyph)
+      let sum = 0;
+      Array.from(l.children).forEach(ch => { sum += ch.getBoundingClientRect().width; });
+      // Ajoute une petite marge (arrondis/kerning iOS)
+      w = Math.max(w, Math.ceil(sum) + 2);
+    }
+    neededW = Math.max(neededW, w);
+  });
   const neededH = content.scrollHeight;
 
   let s = 1;
