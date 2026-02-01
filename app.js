@@ -38,13 +38,13 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
   {
-    "q1": "volt × ampère",
+    "q1": "volt x ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt × heure",
+    "q1": "watt x heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
@@ -62,7 +62,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "ampère × heure",
+    "q1": "ampère x heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
@@ -101,6 +101,7 @@ const DATA = [
 
 const card = document.getElementById("card");
 const el = document.getElementById("content");
+const homeImg = document.querySelector(".home-image");
 
 const state = {
   mode: "home", // "home" | "question" | "answer"
@@ -148,78 +149,82 @@ function esc(s){
     .replaceAll(">","&gt;");
 }
 
-function htmlToText(s){
-  const div = document.createElement("div");
-  div.innerHTML = (s ?? "").toString();
-  return (div.textContent || "").trim();
-}
 
-function setExpr(targetSpan, s){
-  // Construit la ligne 1 en DOM, sans .replace() fragile et sans HTML dans les données.
-  if(!targetSpan) return;
-  const txt = htmlToText(s);
-  targetSpan.textContent = "";
-  const frag = document.createDocumentFragment();
+function buildExprHTML(raw){
+  // Construit du HTML où les opérateurs × ÷ - sont NON gras
+  // et tout le reste est en gras (classe qb).
+  const s = (raw ?? "").toString();
+  if (!s) return "";
+  let out = "";
   let buf = "";
   const flush = () => {
-    if(buf){
-      frag.appendChild(document.createTextNode(buf));
-      buf = "";
-    }
+    if (!buf) return;
+    out += `<span class="qb">${esc(buf)}</span>`;
+    buf = "";
   };
-  for(let i=0;i<txt.length;i++){
-    const ch = txt[i];
-    if(ch === "×" || ch === "÷" || ch === "-"){
+  for (let i = 0; i < s.length; i++){
+    const ch = s[i];
+    if (ch === "×" || ch === "÷" || ch === "-"){
       flush();
-      const sp = document.createElement("span");
-      sp.className = "op";
-      sp.textContent = ch;
-      frag.appendChild(sp);
-    }else{
+      const cls = ch === "×" ? "op mult" : (ch === "÷" ? "op divop" : "op hyph");
+      out += `<span class="${cls}">${esc(ch)}</span>`;
+    } else {
       buf += ch;
     }
   }
   flush();
-  targetSpan.appendChild(frag);
+  return out;
 }
 
-
 function renderExprBoldNoOp(s){
-  // Rend:
-  // - "A x B" ou "A × B" : A et B en gras, × non gras
-  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
+  // Objectif :
+  // - Opérateurs (× ÷ -) JAMAIS en gras
+  // - Opérandes seulement en gras (via .qb)
+  // - Pas d'espaces "texte" autour des opérateurs (évite décentrage iOS)
   const txt = (s ?? "").trim();
-  // Normalise multiplication sans casser des mots (ex: "Lux")
+  if (!txt) return "";
+
+  // Normalise × ÷ x et espaces
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
+    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/\s+[x×]\s+/g, " × ")
+    .replace(/\s+÷\s+/g, " ÷ ")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!txt) return "";
-
-  // 1) Multiplication (espaces autour)
-  const mulParts = norm.split(/\s+×\s+/);
-  if (mulParts.length > 1){
-    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
-    for (let k = 1; k < mulParts.length; k++){
-      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
+  // 1) Multiplication
+  let parts = norm.split(/\s+×\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
     }
-    return html;
+    return `<span class="expr-wrapper">${html}</span>`;
   }
 
-  // 2) Composés avec trait d'union (sans espaces)
-  const hyParts = norm.split(/-/);
-  if (hyParts.length > 1){
-    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
-    for (let k = 1; k < hyParts.length; k++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
+  // 2) Division
+  parts = norm.split(/\s+÷\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
     }
-    return html;
+    return `<span class="expr-wrapper">${html}</span>`;
   }
 
-  // 3) Texte simple
+  // 3) Trait d’union (sans espaces)
+  const hy = norm.split(/-/);
+  if (hy.length > 1){
+    let html = `<span class="qb">${esc(hy[0])}</span>`;
+    for (let i = 1; i < hy.length; i++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
+    }
+    return `<span class="expr-wrapper">${html}</span>`;
+  }
+
+  // 4) Texte simple
   return `<span class="qb">${esc(norm)}</span>`;
 }
 
@@ -227,32 +232,29 @@ function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
 
-  if (state.mode === "home") return;
+  if (homeImg) homeImg.style.display = (state.mode === "home") ? "block" : "none";
+  if (state.mode === "home"){ el.innerHTML = ""; return; }
 
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = htmlToText(item.q1 ?? "");
+    const q1 = renderExprBoldNoOp(item.q1);
     const q2 = (item.q2 ?? "").trim();
-
     el.innerHTML = `
-      <div class="q-line1"><span class="line1-text"></span></div>
+      <div class="q-line1">${q1}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    setExpr(el.querySelector(".q-line1 .line1-text"), q1);
     scheduleFit();
     return;
   }
 
   // answer
-  const a1 = htmlToText(item.a1 ?? "");
+  const a1 = buildExprHTML(item.a1 ?? "");
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
-    <div class="a-line1"><span class="line1-text"></span></div>
+    <div class="a-line1">${a1}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  setExpr(el.querySelector(".a-line1 .line1-text"), a1);
-  scheduleFit();
 }
 
 
@@ -262,8 +264,9 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // reset scale
-  content.style.setProperty("--fit-scale","1");
+  // reset transform for measurement
+  content.style.transform = "none";
+  content.style.transformOrigin = "50% 50%";
 
   const cs = getComputedStyle(circle);
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
@@ -272,18 +275,36 @@ function fitToCircle(){
   const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
   const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
-  const line1 = content.querySelector(".line1-text");
-  const line2 = content.querySelector(".q-line2,.a-line2");
+  // Mesure robuste : clone du contenu en "max-content" hors-écran
+  const clone = content.cloneNode(true);
+  clone.style.position = "absolute";
+  clone.style.visibility = "hidden";
+  clone.style.left = "-10000px";
+  clone.style.top = "0";
+  clone.style.width = "max-content";
+  clone.style.maxWidth = "none";
+  clone.style.whiteSpace = "nowrap";
+  clone.style.transform = "none";
+  document.body.appendChild(clone);
 
-  const neededW = Math.max(line1 ? line1.scrollWidth : 0, line2 ? line2.scrollWidth : 0, 1);
-  const neededH = Math.max(content.scrollHeight, 1);
+  const rect = clone.getBoundingClientRect();
+  const neededW = Math.ceil(rect.width) + 6;   // marge kerning/arrondis iOS
+  const neededH = Math.ceil(rect.height) + 2;
+
+  document.body.removeChild(clone);
 
   let s = 1;
-  s = Math.min(s, availW / neededW);
-  s = Math.min(s, availH / neededH);
+  if(neededW > 0) s = Math.min(s, availW / neededW);
+  if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
-  content.style.setProperty("--fit-scale", String(s));
+  // Autorise un scale plus petit pour les très longues expressions
+  s = Math.max(0.25, Math.min(1, s)) * 0.99;
+
+  // Applique le scale tout en préservant le centrage horizontal parfait
+  content.style.transform = `translate(-50%, -50%) scale(${s})`;
+  content.style.position = "absolute";
+  content.style.left = "50%";
+  content.style.top = "50%";
 }
 
 function scheduleFit(){
@@ -294,25 +315,6 @@ function scheduleFit(){
     }
   });
 }
-
-/* Refit automatique sur changements de taille */
-(function installRefitHooks(){
-  let raf = null;
-  const refitSoon = () => {
-    if (state.mode === "home") return;
-    if (raf) cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => fitToCircle());
-  };
-  window.addEventListener("resize", refitSoon, { passive:true });
-  window.addEventListener("orientationchange", refitSoon, { passive:true });
-  try{
-    const ro = new ResizeObserver(refitSoon);
-    const circle = document.querySelector(".circle");
-    const content = document.getElementById("content");
-    if(circle) ro.observe(circle);
-    if(content) ro.observe(content);
-  }catch(e){}
-})();
 
 async function handleTap(){
   if (tapLocked) return;
