@@ -16,8 +16,50 @@ const DATA = [
 {
     "q1": "kilo",
     "q2": "",
-    "a1": "10<sup>3</sup>",
-    "a2_html": "(<span class=\"italic\">Q</span>)"
+    "a1_html": "10<sup>3</sup>",
+    "a2_html": ""
+  },
+{
+    "q1": "milli",
+    "q2": "",
+    "a1_html": "10<sup>-3</sup>",
+    "a2_html": ""
+  },
+{
+    "q1": "Mega",
+    "q2": "",
+    "a1_html": "10<sup>6</sup>",
+    "a2_html": ""
+  },
+{
+    "q1": "Giga",
+    "q2": "",
+    "a1_html": "10<sup>9</sup>",
+    "a2_html": ""
+  },
+{
+    "q1": "Micro",
+    "q2": "",
+    "a1_html": "10<sup>-6</sup>",
+    "a2_html": ""
+  },
+{
+    "q1": "Tera",
+    "q2": "",
+    "a1_html": "10<sup>12</sup>",
+    "a2_html": ""
+  },
+{
+    "q1": "Nano",
+    "q2": "",
+    "a1_html": "10<sup>-9</sup>",
+    "a2_html": ""
+  },
+{
+    "q1": "Pico",
+    "q2": "",
+    "a1_html": "10<sup>-12</sup>",
+    "a2_html": ""
   },
   {
     "q1": "coulomb",
@@ -282,9 +324,15 @@ function render(){
 
   // answer
   const a1 = item.a1 ?? "";
+  const a1_html = (item.a1_html ?? "").trim();
   const a2 = (item.a2_html ?? "").trim();
+
+  // Si a1_html est fourni, on l'utilise tel quel (HTML), pour permettre <sup>…</sup>, etc.
+  // Sinon, on utilise le rendu standard (gras + opérateurs non gras + fractions empilées).
+  const a1LineHTML = a1_html ? `<span class="qb">${a1_html}</span>` : renderLine1HTML(a1);
+
   el.innerHTML = `
-    <div class="a-line1">${renderLine1HTML(a1)}</div>
+    <div class="a-line1">${a1LineHTML}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
 }
