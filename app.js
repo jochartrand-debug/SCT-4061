@@ -37,12 +37,6 @@ const DATA = [
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
- {
-    "q1": "watt x seconde",
-    "q2": "",
-    "a1": "joule",
-    "a2_html": ""
-  },
   {
     "q1": "volt x ampère",
     "q2": "",
@@ -53,18 +47,6 @@ const DATA = [
     "q1": "watt x heure",
     "q2": "",
     "a1": "Wh",
-    "a2_html": ""
-  },
-{
-    "q1": "Distance ÷ Temps",
-    "q2": "",
-    "a1": "Vitesse",
-    "a2_html": ""
-  },
-{
-    "q1": "mètre ÷ seconde",
-    "q2": "",
-    "a1": "m/s",
     "a2_html": ""
   },
 {
@@ -108,12 +90,6 @@ const DATA = [
     "q2": "(W)",
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
-  },
-{
-    "q1": "mètre",
-    "q2": "(m)",
-    "a1": "Distance",
-    "a2_html": "(<span class=\"italic\">d</span>)"
   },
 {
     "q1": "seconde",
@@ -174,58 +150,42 @@ function esc(s){
 
 function renderExprBoldNoOp(s){
   // Rend:
-  // - "A x B" / "A × B" : A et B en gras, × non gras
-  // - "A ÷ B" : A et B en gras, ÷ non gras
-  // - "A-heure" : mots en gras, trait d’union non gras
+  // - "A x B" ou "A × B" : A et B en gras, × non gras
+  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
-  if (!txt) return "";
-
-  // Normalisation
+  // Normalise multiplication sans casser des mots (ex: "Lux")
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
-    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+÷\s+/g, " ÷ ")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Style opérateur : force une police "normale" (au cas où la ligne utilise une police bold-only)
-  const OP_STYLE = 'font-weight:400!important;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important';
+  if (!txt) return "";
 
-  // Multiplication
-  let parts = norm.split(/\s+×\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += ` <span class="mult" style="${OP_STYLE}">×</span> <span class="qb">${esc(parts[i])}</span>`;
+  // 1) Multiplication (espaces autour)
+  const mulParts = norm.split(/\s+×\s+/);
+  if (mulParts.length > 1){
+    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
+    for (let k = 1; k < mulParts.length; k++){
+      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
     }
     return html;
   }
 
-  // Division
-  parts = norm.split(/\s+÷\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += ` <span class="div" style="${OP_STYLE}">÷</span> <span class="qb">${esc(parts[i])}</span>`;
+  // 2) Composés avec trait d'union (sans espaces)
+  const hyParts = norm.split(/-/);
+  if (hyParts.length > 1){
+    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
+    for (let k = 1; k < hyParts.length; k++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
     }
     return html;
   }
 
-  // Trait d’union
-  const hy = norm.split(/-/);
-  if (hy.length > 1){
-    let html = `<span class="qb">${esc(hy[0])}</span>`;
-    for (let i = 1; i < hy.length; i++){
-      html += `<span class="hyph" style="${OP_STYLE}">-</span><span class="qb">${esc(hy[i])}</span>`;
-    }
-    return html;
-  }
-
+  // 3) Texte simple
   return `<span class="qb">${esc(norm)}</span>`;
 }
-
 
 function render(){
   card.classList.remove("home","question","answer");
@@ -269,8 +229,8 @@ function fitToCircle(){
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.88);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.90);
 
   const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
   if(!lines.length) return;
@@ -283,33 +243,8 @@ function fitToCircle(){
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
+  s = Math.max(0.30, Math.min(1, s)) * 0.99;
   content.style.transform = `translateZ(0) scale(${s})`;
-
-  // Micro-ajustement (sécuritaire) : uniquement la ligne qui contient ÷, et clamp très faible.
-  // On NE déplace pas tout le contenu, seulement .q-line1/.a-line1.
-  const lineDiv = content.querySelector(".q-line1 .div") ? content.querySelector(".q-line1")
-                 : (content.querySelector(".a-line1 .div") ? content.querySelector(".a-line1") : null);
-
-  // Réinitialise toute translation précédente
-  const ql1 = content.querySelector(".q-line1");
-  const al1 = content.querySelector(".a-line1");
-  if (ql1) ql1.style.transform = "";
-  if (al1) al1.style.transform = "";
-
-  if (lineDiv){
-    const cRect = circle.getBoundingClientRect();
-    const lRect = lineDiv.getBoundingClientRect();
-    const dxScreen = (cRect.left + cRect.width/2) - (lRect.left + lRect.width/2);
-
-    // Convertit en unités avant scale (translate sur la ligne est aussi scalé)
-    let dx = dxScreen / s;
-
-    // Clamp TRES petit pour éviter tout "brisement"
-    dx = Math.max(-6, Math.min(6, dx));
-
-    lineDiv.style.transform = `translateX(${dx}px)`;
-  }
 }
 
 function scheduleFit(){
