@@ -235,6 +235,7 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
+  // reset transform for measurement
   content.style.transform = "none";
   content.style.transformOrigin = "50% 50%";
 
@@ -245,41 +246,31 @@ function fitToCircle(){
   const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
   const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
-  if(!lines.length) return;
+  // Mesure robuste : clone du contenu en "max-content" hors-écran
+  const clone = content.cloneNode(true);
+  clone.style.position = "absolute";
+  clone.style.visibility = "hidden";
+  clone.style.left = "-10000px";
+  clone.style.top = "0";
+  clone.style.width = "max-content";
+  clone.style.maxWidth = "none";
+  clone.style.whiteSpace = "nowrap";
+  clone.style.transform = "none";
+  document.body.appendChild(clone);
 
-  let neededW = 0;
-  // Mesure robuste: clone hors-écran en "max-content" pour obtenir la largeur intrinsèque réelle
-  lines.forEach(l => {
-    let w = l.scrollWidth;
+  const rect = clone.getBoundingClientRect();
+  const neededW = Math.ceil(rect.width) + 6;   // marge kerning/arrondis iOS
+  const neededH = Math.ceil(rect.height) + 2;
 
-    // Si la ligne est en flex + width:100%, scrollWidth peut être trompeur sur iOS.
-    if (w <= l.clientWidth + 1){
-      const clone = l.cloneNode(true);
-      clone.style.position = "absolute";
-      clone.style.visibility = "hidden";
-      clone.style.left = "-10000px";
-      clone.style.top = "0";
-      clone.style.width = "max-content";
-      clone.style.maxWidth = "none";
-      clone.style.whiteSpace = "nowrap";
-      clone.style.display = "inline-flex";
-      clone.style.justifyContent = "flex-start";
-      clone.style.transform = "none";
-      document.body.appendChild(clone);
-      w = Math.ceil(clone.getBoundingClientRect().width) + 4; // marge kerning/arrondis iOS
-      document.body.removeChild(clone);
-    }
-
-    neededW = Math.max(neededW, w);
-  });
-  const neededH = content.scrollHeight;
+  document.body.removeChild(clone);
 
   let s = 1;
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.35, Math.min(1, s)) * 0.99;
+  // Autorise un scale plus petit pour les très longues expressions
+  s = Math.max(0.25, Math.min(1, s)) * 0.99;
+
   content.style.transform = `translateZ(0) scale(${s})`;
 }
 
