@@ -182,7 +182,7 @@ function renderLine1HTML(s){
   const txt = htmlToText(s);
   // Cas spécial: on veut afficher "m/s" en une seule ligne (pas en fraction empilée)
   if (txt.trim().toLowerCase() === "m/s"){
-    return `<span class="qb">m/s</span>`;
+    return `<span class="qb">m</span><span class="op slash">/</span><span class="qb">s</span>`;
   }
   const parts = txt.split("/");
   if(parts.length === 2 && parts[0].trim() && parts[1].trim()){

@@ -71,7 +71,6 @@ body{
 
 .screen{
   min-height: 100vh;
-  min-height: 100svh;
   min-height: 100dvh;
   display: grid;
   place-items: center;
@@ -89,8 +88,9 @@ body{
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--pad, 18px);
+  padding: 18px;
   border-radius: 18px;
+  position: relative;
 }
 
 
@@ -531,3 +531,7 @@ body{
   position: relative;
   z-index: 1;
 }
+
+
+/* Slash non gras (cas particulier m/s) */
+.op.slash{ font-weight: 400 !important; }
