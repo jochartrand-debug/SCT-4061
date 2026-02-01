@@ -469,15 +469,12 @@ body{
   white-space: nowrap;
 }
 
-/* === FIX v21 : cause racine (opérateurs) ===
-   Les questions avec × / ÷ sont injectées en plusieurs <span>.
-   Avec les anciennes règles (flex + width:100% + !important multiples), iOS peut calculer une largeur de ligne
-   différente selon qu'il y a des spans ou du texte simple, ce qui donne un centrage "visuel" instable.
-   Solution : on force la ligne 1 à être shrink-to-fit (inline-block) et on centre via le conteneur .content.
-   On garde la 2e ligne en block pour l'empilement. */
+/* === FIX v22 : ne pas affecter l'accueil ===
+   Les overrides v21 doivent s'appliquer uniquement aux cartes Question/Réponse,
+   sinon le logo (éclair) de l'accueil peut se superposer au contenu. */
 
-/* Conteneur: centre la colonne */
-.content{
+.card.question .content,
+.card.answer  .content{
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -485,8 +482,9 @@ body{
   text-align: center !important;
 }
 
-/* Ligne 1 shrink-to-fit */
-.q-line1, .a-line1{
+/* Ligne 1 shrink-to-fit seulement dans les cartes */
+.card.question .q-line1,
+.card.answer  .a-line1{
   width: auto !important;
   max-width: 100% !important;
   display: inline-block !important;
@@ -494,31 +492,44 @@ body{
   text-align: center !important;
 }
 
-/* Ligne 2 reste bien en dessous */
-.q-line2, .a-line2{
+/* Ligne 2 */
+.card.question .q-line2,
+.card.answer  .a-line2{
   width: auto !important;
   display: block !important;
   text-align: center !important;
 }
 
-/* Wrapper toujours shrink-to-fit */
-.expr-wrapper{
+/* Wrapper */
+.card.question .expr-wrapper,
+.card.answer  .expr-wrapper{
   display: inline-block !important;
   white-space: nowrap !important;
 }
 
-/* Opérateurs: non gras + même espacement (évite toute "optique" différente entre × et ÷) */
-.q-line1 .mult, .a-line1 .mult,
-.q-line1 .div,  .a-line1 .div,
-.q-line1 .hyph, .a-line1 .hyph{
+/* Opérateurs (dans cartes seulement) */
+.card.question .q-line1 .mult,
+.card.question .q-line1 .div,
+.card.question .q-line1 .hyph,
+.card.answer  .a-line1 .mult,
+.card.answer  .a-line1 .div,
+.card.answer  .a-line1 .hyph{
   font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   font-weight: 400 !important;
 }
 
-.q-line1 .mult, .a-line1 .mult,
-.q-line1 .div,  .a-line1 .div{
+.card.question .q-line1 .mult,
+.card.question .q-line1 .div,
+.card.answer  .a-line1 .mult,
+.card.answer  .a-line1 .div{
   padding: 0 0.18em !important;
 }
-.q-line1 .hyph, .a-line1 .hyph{
+.card.question .q-line1 .hyph,
+.card.answer  .a-line1 .hyph{
   padding: 0 !important;
+}
+
+/* Assure que le logo d'accueil reste derrière et ne capte pas d'espace */
+.home-logo, .home-bolt, .home-image, .logo{
+  pointer-events: none;
 }
