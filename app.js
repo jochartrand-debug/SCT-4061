@@ -247,16 +247,18 @@ function renderLine1HTML(s){
   // Option B: fraction empilée si exactement un "/" (ex: coulomb/seconde)
   const txt = htmlToText(s);
   // Cas spécial: on veut afficher "m/s" en une seule ligne (pas en fraction empilée)
-  if (txt.trim().toLowerCase() === "m/s"){
-    return `<span class="qb">m</span><span class="op slash">/</span><span class="qb">s</span>`;
-  }
-  const parts = txt.split("/");
-  const t = txt.trim().toLowerCase();
+
+ const t = txt.trim().toLowerCase();
 if (t === "m/s" || t === "c/s" || t === "kg/s" || t === "m³/s") {
   const [num, den] = txt.trim().split("/");
   return `<span class="qb">${num}</span><span class="op slash">/</span><span class="qb">${den}</span>`;
 }
 
+
+  const parts = txt.split("/");
+  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
+    return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
+  }
 
   // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
   let out = "";
