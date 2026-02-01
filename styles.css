@@ -485,7 +485,7 @@ body{
 /* Fraction empilée (Option B) */
 .frac{
   display: inline-grid;
-  grid-template-rows: auto 0.12em auto;
+  grid-template-rows: auto 0.05em auto;
   align-items: center;
   justify-items: center;
   line-height: 1.05;
