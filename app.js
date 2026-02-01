@@ -173,13 +173,14 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Objectif :
-  // - Opérateurs (× ÷ -) JAMAIS en gras
-  // - Opérandes seulement en gras
-  // - Robuste même si .q-line1 est en gras : on force un wrapper en normal
+  // Rend:
+  // - "A x B" / "A × B" : A et B en gras, × non gras
+  // - "A ÷ B" : A et B en gras, ÷ non gras
+  // - "A-heure" : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
+  // Normalisation
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
@@ -189,43 +190,40 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
-  const WRAP_START = `<span class="expr" style="font-weight:400 !important">`;
-  const WRAP_END = `</span>`;
-  const BOLD = (t) => `<span class="qb" style="font-weight:700 !important">${esc(t)}</span>`;
-  const OP = (ch, cls) => `<span class="${cls}" style="font-weight:400 !important">${ch}</span>`;
+  // Style opérateur : force une police "normale" (au cas où la ligne utilise une police bold-only)
+  const OP_STYLE = 'font-weight:400!important;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important';
 
-  // 1) Multiplication
+  // Multiplication
   let parts = norm.split(/\s+×\s+/);
   if (parts.length > 1){
-    let html = WRAP_START + BOLD(parts[0]);
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
     for (let i = 1; i < parts.length; i++){
-      html += ` ${OP("×","mult")} ${BOLD(parts[i])}`;
+      html += ` <span class="mult" style="${OP_STYLE}">×</span> <span class="qb">${esc(parts[i])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
-  // 2) Division
+  // Division
   parts = norm.split(/\s+÷\s+/);
   if (parts.length > 1){
-    let html = WRAP_START + BOLD(parts[0]);
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
     for (let i = 1; i < parts.length; i++){
-      html += ` ${OP("÷","div")} ${BOLD(parts[i])}`;
+      html += ` <span class="div" style="${OP_STYLE}">÷</span> <span class="qb">${esc(parts[i])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
-  // 3) Trait d’union (sans espaces)
+  // Trait d’union
   const hy = norm.split(/-/);
   if (hy.length > 1){
-    let html = WRAP_START + BOLD(hy[0]);
+    let html = `<span class="qb">${esc(hy[0])}</span>`;
     for (let i = 1; i < hy.length; i++){
-      html += `${OP("-","hyph")}${BOLD(hy[i])}`;
+      html += `<span class="hyph" style="${OP_STYLE}">-</span><span class="qb">${esc(hy[i])}</span>`;
     }
-    return html + WRAP_END;
+    return html;
   }
 
-  // 4) Texte simple
-  return WRAP_START + BOLD(norm) + WRAP_END;
+  return `<span class="qb">${esc(norm)}</span>`;
 }
 
 
@@ -286,23 +284,31 @@ function fitToCircle(){
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
   s = Math.max(0.5, Math.min(1, s)) * 0.99;
-  // 1) Applique le scale
   content.style.transform = `translateZ(0) scale(${s})`;
 
-  // 2) Recentre finement (surtout utile sur iOS) quand il y a ÷ :
-  //    on mesure le centre réel après scale, puis on compense avec translateX.
-  if (content.querySelector(".div")){
-    const cRect = circle.getBoundingClientRect();
-    const tRect = content.getBoundingClientRect();
-    const dxScreen = (cRect.left + cRect.width/2) - (tRect.left + tRect.width/2);
+  // Micro-ajustement (sécuritaire) : uniquement la ligne qui contient ÷, et clamp très faible.
+  // On NE déplace pas tout le contenu, seulement .q-line1/.a-line1.
+  const lineDiv = content.querySelector(".q-line1 .div") ? content.querySelector(".q-line1")
+                 : (content.querySelector(".a-line1 .div") ? content.querySelector(".a-line1") : null);
 
-    // Convertit en unités "avant scale" puisque translateX est aussi scalé.
+  // Réinitialise toute translation précédente
+  const ql1 = content.querySelector(".q-line1");
+  const al1 = content.querySelector(".a-line1");
+  if (ql1) ql1.style.transform = "";
+  if (al1) al1.style.transform = "";
+
+  if (lineDiv){
+    const cRect = circle.getBoundingClientRect();
+    const lRect = lineDiv.getBoundingClientRect();
+    const dxScreen = (cRect.left + cRect.width/2) - (lRect.left + lRect.width/2);
+
+    // Convertit en unités avant scale (translate sur la ligne est aussi scalé)
     let dx = dxScreen / s;
 
-    // Clamp pour éviter des corrections trop fortes / oscillations
-    dx = Math.max(-12, Math.min(12, dx));
+    // Clamp TRES petit pour éviter tout "brisement"
+    dx = Math.max(-6, Math.min(6, dx));
 
-    content.style.transform = `translateZ(0) translateX(${dx}px) scale(${s})`;
+    lineDiv.style.transform = `translateX(${dx}px)`;
   }
 }
 
