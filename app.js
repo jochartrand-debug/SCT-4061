@@ -190,23 +190,26 @@ function render(){
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = ((item.q1 ?? "")).trim();
-    const q2 = (item.q2 ?? "").trim();
+    const q1 = ((item.q1 ?? "")).toString().trim();
+    const q2 = (item.q2 ?? "").toString().trim();
     el.innerHTML = `
       <div class="q-line1"><span class="line1-text"></span></div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
+    setExpr(el.querySelector(".line1-text"), q1);
     scheduleFit();
     return;
   }
 
   // answer
-  const a1 = esc(item.a1 ?? "");
-  const a2 = (item.a2_html ?? "").trim();
+  const a1 = (item.a1 ?? "").toString().trim();
+  const a2 = (item.a2_html ?? "").toString().trim();
   el.innerHTML = `
     <div class="a-line1"><span class="line1-text"></span></div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
+  setExpr(el.querySelector(".line1-text"), a1);
+  scheduleFit();
 }
 
 
