@@ -103,9 +103,9 @@ body{
   padding: 18px;
   position: relative;
 
-  touch-action: none;
-  -webkit-touch-callout: none;
-  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+
+  touch-action: manipulation;
 }
 
 
