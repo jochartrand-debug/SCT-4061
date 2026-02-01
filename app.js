@@ -57,7 +57,7 @@ const DATA = [
   },
 {
     "q1": "Pico",
-    "q2": "",
+    "q2": "(p)",
     "a1_html": "10<sup>-12</sup>",
     "a2_html": ""
   },
