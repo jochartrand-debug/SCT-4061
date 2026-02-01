@@ -122,6 +122,12 @@ const DATA = [
     "a2_html": ""
   },
 {
+    "q1": "J/s",
+    "q2": "",
+    "a1": "Débit d'énergie",
+    "a2_html": ""
+  },
+{
     "q1": "C/s",
     "q2": "",
     "a1": "Débit de charge",
@@ -249,7 +255,7 @@ function renderLine1HTML(s){
   // Cas spécial: on veut afficher "m/s" en une seule ligne (pas en fraction empilée)
 
  const t = txt.trim().toLowerCase();
-if (t === "m/s" || t === "c/s" || t === "kg/s" || t === "m³/s") {
+if (t === "m/s" || t === "c/s" || t === "kg/s" || t === "m³/s" || t === "J/s") {
   const [num, den] = txt.trim().split("/");
   return `<span class="qb">${num}</span><span class="op slash">/</span><span class="qb">${den}</span>`;
 }
