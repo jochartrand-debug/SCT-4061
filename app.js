@@ -271,6 +271,13 @@ function fitToCircle(){
   // Autorise un scale plus petit pour les très longues expressions
   s = Math.max(0.25, Math.min(1, s)) * 0.99;
 
+  // Petit ajustement visuel: les expressions avec ÷ sont légèrement plus longues (padding + glyph)
+  // Sur iOS, ça peut donner un centrage "visuel" imparfait car ça frôle le bord du cercle.
+  // On réduit donc un tout petit peu seulement quand ÷ est présent.
+  if (content.querySelector(".div")){
+    s *= 0.97;
+  }
+
   // Applique le scale tout en préservant le centrage horizontal parfait
   content.style.transform = `translate(-50%, -50%) scale(${s})`;
   content.style.position = "absolute";

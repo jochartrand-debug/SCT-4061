@@ -457,7 +457,7 @@ body{
   padding: 0 0.18em;
 }
 .q-line1 .div, .a-line1 .div{
-  padding: 0 0.25em; /* Plus d'espace pour ÷ qui est visuellement plus étroit */
+  padding: 0 0.18em; /* Plus d'espace pour ÷ qui est visuellement plus étroit */
 }
 .q-line1 .hyph, .a-line1 .hyph{
   padding: 0;
