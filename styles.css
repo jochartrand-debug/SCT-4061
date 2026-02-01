@@ -458,3 +458,9 @@ body{
 .q-line1 .hyph, .a-line1 .hyph{
   padding: 0;
 }
+
+/* Wrapper pour forcer le centrage correct des expressions composées */
+.expr-wrapper{
+  display: inline-block;
+  white-space: nowrap;
+}

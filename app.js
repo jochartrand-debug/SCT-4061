@@ -173,7 +173,7 @@ function renderExprBoldNoOp(s){
     for (let i = 1; i < parts.length; i++){
       html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
     }
-    return html;
+    return `<span class="expr-wrapper">${html}</span>`;
   }
 
   // 2) Division
@@ -183,7 +183,7 @@ function renderExprBoldNoOp(s){
     for (let i = 1; i < parts.length; i++){
       html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
     }
-    return html;
+    return `<span class="expr-wrapper">${html}</span>`;
   }
 
   // 3) Trait d’union (sans espaces)
@@ -193,7 +193,7 @@ function renderExprBoldNoOp(s){
     for (let i = 1; i < hy.length; i++){
       html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
     }
-    return html;
+    return `<span class="expr-wrapper">${html}</span>`;
   }
 
   // 4) Texte simple
