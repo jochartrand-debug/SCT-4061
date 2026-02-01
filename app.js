@@ -161,7 +161,7 @@ function render(){
     const q1 = esc(((item.q1 ?? "")).trim());
     const q2 = (item.q2 ?? "").trim();
     el.innerHTML = `
-      <div class="q-line1">${q1}</div>
+      <div class="q-line1"><span class="line1-text">${q1}</span></div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
     scheduleFit();
@@ -172,7 +172,7 @@ function render(){
   const a1 = esc(item.a1 ?? "");
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
-    <div class="a-line1">${a1}</div>
+    <div class="a-line1"><span class="line1-text">${a1}</span></div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
 }
@@ -184,6 +184,7 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
+  // Reset transform for accurate measures
   content.style.transform = "none";
   content.style.transformOrigin = "50% 50%";
 
@@ -191,21 +192,26 @@ function fitToCircle(){
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
+  // Plus conservateur: évite tout rognage iOS quand la ligne est longue
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.84);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.90);
 
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
-  if(!lines.length) return;
+  // Mesure sur la boîte "shrink-to-fit" (pas sur un bloc 100%)
+  const measureTargets = content.querySelectorAll(".line1-text, .q-line2, .a-line2");
+  if(!measureTargets.length) return;
 
   let neededW = 0;
-  lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
+  measureTargets.forEach(el => {
+    neededW = Math.max(neededW, el.scrollWidth);
+  });
   const neededH = content.scrollHeight;
 
   let s = 1;
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.5, Math.min(1, s)) * 0.99;
+  // Autorise plus petit si nécessaire
+  s = Math.max(0.25, Math.min(1, s)) * 0.99;
   content.style.transform = `translateZ(0) scale(${s})`;
 }
 
