@@ -56,9 +56,27 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "joule ÷ seconde",
+    "q1": "joule/seconde",
     "q2": "",
     "a1": "watt",
+    "a2_html": ""
+  },
+{
+    "q1": "mètre/seconde",
+    "q2": "",
+    "a1": "m/s",
+    "a2_html": ""
+  },
+{
+    "q1": "Distance/Temps",
+    "q2": "",
+    "a1": "Vitesse",
+    "a2_html": ""
+  },
+{
+    "q1": "watt × seconde",
+    "q2": "",
+    "a1": "joule",
     "a2_html": ""
   },
 {
@@ -91,7 +109,12 @@ const DATA = [
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
   },
-{
+ {
+    "q1": "mètre",
+    "q2": "(m)",
+    "a1": "Distance",
+    "a2_html": "(<span class=\"italic\">P</span>)"
+  },{
     "q1": "seconde",
     "q2": "(s)",
     "a1": "Temps",
@@ -155,21 +178,11 @@ function htmlToText(s){
 }
 
 function renderLine1HTML(s){
-  // Option B: fraction empilée si EXACTEMENT un séparateur de division :
-  // - "/" ou "∕" ou "÷" (avec ou sans espaces)
+  // Option B: fraction empilée si exactement un "/" (ex: coulomb/seconde)
   const txt = htmlToText(s);
-
-  // Normalise seulement pour détecter la fraction (sans modifier le texte affiché)
-  const norm = txt.replace(/\s+/g, " ").trim();
-
-  // Détection d'un seul séparateur
-  const divMatches = norm.match(/[\/∕÷]/g) || [];
-  if(divMatches.length === 1){
-    const sep = divMatches[0];
-    const parts = norm.split(sep);
-    if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
-      return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
-    }
+  const parts = txt.split("/");
+  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
+    return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
   }
 
   // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
@@ -253,7 +266,7 @@ function render(){
       <div class="q-line1">${renderLine1HTML(q1)}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    
+    scheduleFit();
     return;
   }
 
