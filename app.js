@@ -56,25 +56,25 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "Distance ÷ Temps",
+    "q1": "Distance : Temps",
     "q2": "",
     "a1": "Vitesse",
     "a2_html": ""
   },
 {
-    "q1": "mètre ÷ seconde",
+    "q1": "mètre : seconde",
     "q2": "",
     "a1": "m/s",
     "a2_html": ""
   },
 {
-    "q1": "coulomb ÷ seconde",
+    "q1": "coulomb : seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
 {
-    "q1": "joule ÷ seconde",
+    "q1": "joule : seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
@@ -184,21 +184,16 @@ function renderExprBoldNoOp(s){
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
+    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ]):([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 ÷ $2")  // NOUVEAU : : devient ÷
     .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+÷\s+/g, " ÷ ")
+    .replace(/\s+[:\÷]\s+/g, " ÷ ")  // MODIFIÉ : inclut : et ÷
     .replace(/\s+/g, " ")
     .trim();
 
   const WRAP_START = `<span class="expr" style="font-weight:400">`;
   const WRAP_END = `</span>`;
   const BOLD = (t) => `<span class="qb" style="font-weight:700">${esc(t)}</span>`;
-  const OP = (ch, cls) => {
-    // Pour ÷, utiliser opacity et scale pour le rendre visuellement plus léger
-    if (ch === '÷') {
-      return `<span class="${cls}" style="font-weight:300 !important; opacity:0.85; display:inline-block; transform:scaleY(0.95);">${ch}</span>`;
-    }
-    return `<span class="${cls}" style="font-weight:400">${ch}</span>`;
-  };
+  const OP = (ch, cls) => `<span class="${cls}" style="font-weight:400">${ch}</span>`;
 
   // 1) Multiplication
   let parts = norm.split(/\s+×\s+/);
