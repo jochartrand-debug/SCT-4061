@@ -38,13 +38,13 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
   {
-    "q1": "volt x ampère",
+    "q1": "volt × ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt x heure",
+    "q1": "watt × heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
@@ -62,7 +62,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "ampère x heure",
+    "q1": "ampère × heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
