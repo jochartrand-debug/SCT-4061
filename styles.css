@@ -423,32 +423,38 @@ body{
 .q-line1,.a-line1{ white-space:nowrap; }
 .q-line2,.a-line2{ white-space:normal; }
 
-/* === Override centrage iOS (texte avec opérateurs) === */
-.content{
-  width: 100% !important;          /* évite largeur shrink-to-fit */
-}
+/* === FIX FINAL: opérateurs non gras + centrage iOS stable === */
 
+/* Le conteneur "content" et la ligne 1 prennent toute la largeur pour éviter le shrink-to-fit */
+#content{ width: 100% !important; }
 .q-line1, .a-line1{
   width: 100% !important;
   display: flex !important;
   justify-content: center !important;
-  align-items: baseline !important;
+  align-items: center !important;
   text-align: center !important;
 }
 
-/* Espacement des opérateurs via CSS (pas via nœuds texte) */
-.q-line1 .mult, .a-line1 .mult,
-.q-line1 .div,  .a-line1 .div{
-  font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
-  font-weight: 400 !important;
-  display: inline-block;
-  padding: 0 0.18em;
+/* Opérandes en gras (ta police ExtraBold) */
+.q-line1 .qb, .a-line1 .qb{
+  font-family: "InterExtraBold", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-weight: 400; /* la fonte ExtraBold porte déjà le gras visuel */
 }
 
-/* Trait d’union: pas d’espace ajouté */
+/* Opérateurs: police régulière + jamais en gras + padding pour les espaces */
+.q-line1 .mult, .a-line1 .mult,
+.q-line1 .div,  .a-line1 .div,
 .q-line1 .hyph, .a-line1 .hyph{
   font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   font-weight: 400 !important;
   display: inline-block;
+}
+
+/* Espacement autour des opérateurs × et ÷ (pas sur le trait d’union) */
+.q-line1 .mult, .a-line1 .mult,
+.q-line1 .div,  .a-line1 .div{
+  padding: 0 0.18em;
+}
+.q-line1 .hyph, .a-line1 .hyph{
   padding: 0;
 }
