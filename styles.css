@@ -468,3 +468,57 @@ body{
   display: inline-block;
   white-space: nowrap;
 }
+
+/* === FIX v21 : cause racine (opérateurs) ===
+   Les questions avec × / ÷ sont injectées en plusieurs <span>.
+   Avec les anciennes règles (flex + width:100% + !important multiples), iOS peut calculer une largeur de ligne
+   différente selon qu'il y a des spans ou du texte simple, ce qui donne un centrage "visuel" instable.
+   Solution : on force la ligne 1 à être shrink-to-fit (inline-block) et on centre via le conteneur .content.
+   On garde la 2e ligne en block pour l'empilement. */
+
+/* Conteneur: centre la colonne */
+.content{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Ligne 1 shrink-to-fit */
+.q-line1, .a-line1{
+  width: auto !important;
+  max-width: 100% !important;
+  display: inline-block !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+/* Ligne 2 reste bien en dessous */
+.q-line2, .a-line2{
+  width: auto !important;
+  display: block !important;
+  text-align: center !important;
+}
+
+/* Wrapper toujours shrink-to-fit */
+.expr-wrapper{
+  display: inline-block !important;
+  white-space: nowrap !important;
+}
+
+/* Opérateurs: non gras + même espacement (évite toute "optique" différente entre × et ÷) */
+.q-line1 .mult, .a-line1 .mult,
+.q-line1 .div,  .a-line1 .div,
+.q-line1 .hyph, .a-line1 .hyph{
+  font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  font-weight: 400 !important;
+}
+
+.q-line1 .mult, .a-line1 .mult,
+.q-line1 .div,  .a-line1 .div{
+  padding: 0 0.18em !important;
+}
+.q-line1 .hyph, .a-line1 .hyph{
+  padding: 0 !important;
+}

@@ -197,7 +197,7 @@ function renderExprBoldNoOp(s){
   }
 
   // 4) Texte simple
-  return `<span class="qb">${esc(norm)}</span>`;
+  return `<span class="expr-wrapper"><span class="qb">${esc(norm)}</span></span>`;
 }
 
 function render(){
