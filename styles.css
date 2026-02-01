@@ -492,7 +492,7 @@ body{
 }
 .frac .bar{
   width: 100%;
-  height: 0.12em;
+  height: 0.06em;
   background: currentColor;
 }
 .frac .num, .frac .den{
