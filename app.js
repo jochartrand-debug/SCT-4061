@@ -271,7 +271,11 @@ function fitToCircle(){
   // Autorise un scale plus petit pour les très longues expressions
   s = Math.max(0.25, Math.min(1, s)) * 0.99;
 
-  content.style.transform = `translateZ(0) scale(${s})`;
+  // Applique le scale tout en préservant le centrage horizontal parfait
+  content.style.transform = `translate(-50%, -50%) scale(${s})`;
+  content.style.position = "absolute";
+  content.style.left = "50%";
+  content.style.top = "50%";
 }
 
 function scheduleFit(){

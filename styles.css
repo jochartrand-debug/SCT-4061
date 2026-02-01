@@ -93,6 +93,7 @@ body{
   place-items: center;
   overflow: hidden;
   padding: 2.5%;
+  position: relative;
 }
 
 /* Cercle blanc seulement pour la QUESTION */
@@ -118,6 +119,9 @@ body{
   width:auto;
   max-width:100%;
   will-change: transform;
+  position: absolute;
+  left: 50%;
+  top: 50%;
 }
 
 .q-line1, .a-line1{
