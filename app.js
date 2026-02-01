@@ -173,12 +173,10 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Solution A : une seule chaîne de texte (pas de <span>), centrage stable.
-  // Contrainte : opérateurs (× ÷ -) non gras gérés par une police composite via unicode-range (CSS).
+  // Texte centré stable + opérateurs non gras via spans minimales
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
-  // Normalise × ÷ x et espaces
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
@@ -188,7 +186,13 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
-  return esc(norm);
+  // Échappe tout, puis réinjecte uniquement les opérateurs dans des spans non gras
+  let html = esc(norm)
+    .replace(/×/g, '<span class="op">×</span>')
+    .replace(/÷/g, '<span class="op">÷</span>')
+    .replace(/-/g, '<span class="op">-</span>');
+
+  return `<span class="expr">${html}</span>`;
 }
 
 
