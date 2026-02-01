@@ -575,5 +575,14 @@ body{
   top: -0.75em;
 }
 
+/* Agrandit uniquement les réponses HTML (a1_html) */
+.a-line sup,
+.a-line sub,
+.a-line span,
+.a-line i,
+.a-line b {
+  font-size: 1.25em;
+}
+
 
 
