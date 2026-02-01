@@ -429,9 +429,7 @@ body{
 #content{ width: 100% !important; }
 .q-line1, .a-line1{
   width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
+  display: block !important;
   text-align: center !important;
 }
 
@@ -459,34 +457,4 @@ body{
 }
 .q-line1 .hyph, .a-line1 .hyph{
   padding: 0;
-}
-
-/* === OVERRIDE v18 : centrage stable pour ÷ (sans largeur 100% en flex) ===
-   On force les lignes 1 à être "shrink-to-fit" (inline-flex), puis centrées par le conteneur.
-   Ça évite le cas où width:100% + flex + overflow du cercle donne un centrage visuel faux pour une seule expression. */
-
-/* Le conteneur ne force pas une largeur 100% */
-#content{
-  width: auto !important;
-  max-width: 100% !important;
-}
-
-/* Lignes 1 en inline-flex (largeur intrinsèque) */
-.q-line1, .a-line1{
-  width: auto !important;
-  display: inline-flex !important;
-  justify-content: center !important;
-  align-items: baseline !important;
-  text-align: center !important;
-}
-
-/* Opérateurs : non gras + spacing uniforme */
-.q-line1 .mult, .a-line1 .mult,
-.q-line1 .div,  .a-line1 .div{
-  padding: 0 0.18em !important;
-}
-
-/* Trait d’union : collé */
-.q-line1 .hyph, .a-line1 .hyph{
-  padding: 0 !important;
 }
