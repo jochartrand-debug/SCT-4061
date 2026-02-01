@@ -38,13 +38,13 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
   {
-    "q1": "volt × ampère",
+    "q1": "volt x ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt × heure",
+    "q1": "watt x heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
@@ -62,7 +62,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "ampère × heure",
+    "q1": "ampère x heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
@@ -141,14 +141,20 @@ function nextIndex(){
   return state.i;
 }
 
+function esc(s){
+  return (s ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
 function setExpr(targetSpan, s){
-  // Remplit targetSpan avec du texte + spans .op pour les opérateurs, sans .replace() et sans HTML fragile.
+  // Construit du DOM: texte + <span class="op">×</span> etc.
+  // Aucun .replace() et aucun HTML fragile.
   if(!targetSpan) return;
   const txt = (s ?? "").toString();
-  targetSpan.textContent = ""; // clear
+  targetSpan.textContent = "";
   const frag = document.createDocumentFragment();
-
-  // Buffer pour regrouper les caractères non-opérateurs
   let buf = "";
   const flush = () => {
     if(buf){
@@ -156,13 +162,12 @@ function setExpr(targetSpan, s){
       buf = "";
     }
   };
-
-  for(let i=0; i<txt.length; i++){
+  for(let i=0;i<txt.length;i++){
     const ch = txt[i];
     if(ch === "×" || ch === "÷" || ch === "-"){
       flush();
       const sp = document.createElement("span");
-      sp.className = "op" + (ch === "-" ? " op-hyph" : "");
+      sp.className = "op";
       sp.textContent = ch;
       frag.appendChild(sp);
     }else{
@@ -173,13 +178,58 @@ function setExpr(targetSpan, s){
   targetSpan.appendChild(frag);
 }
 
-function esc(s){
-  return (s ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;");
-}
 
+function renderExprBoldNoOp(s){
+  // Objectif :
+  // - Opérateurs (× ÷ -) JAMAIS en gras
+  // - Opérandes seulement en gras (via .qb)
+  // - Pas d'espaces "texte" autour des opérateurs (évite décentrage iOS)
+  const txt = (s ?? "").trim();
+  if (!txt) return "";
+
+  // Normalise × ÷ x et espaces
+  const norm = txt
+    .replace(/([^\s])×([^\s])/g, "$1 × $2")
+    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
+    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
+    .replace(/\s+[x×]\s+/g, " × ")
+    .replace(/\s+÷\s+/g, " ÷ ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // 1) Multiplication
+  let parts = norm.split(/\s+×\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
+    }
+    return `<span class="expr-wrapper">${html}</span>`;
+  }
+
+  // 2) Division
+  parts = norm.split(/\s+÷\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
+    }
+    return `<span class="expr-wrapper">${html}</span>`;
+  }
+
+  // 3) Trait d’union (sans espaces)
+  const hy = norm.split(/-/);
+  if (hy.length > 1){
+    let html = `<span class="qb">${esc(hy[0])}</span>`;
+    for (let i = 1; i < hy.length; i++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
+    }
+    return `<span class="expr-wrapper">${html}</span>`;
+  }
+
+  // 4) Texte simple
+  return `<span class="qb">${esc(norm)}</span>`;
+}
 
 function render(){
   card.classList.remove("home","question","answer");
@@ -190,25 +240,27 @@ function render(){
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = ((item.q1 ?? "")).toString().trim();
-    const q2 = (item.q2 ?? "").toString().trim();
+    const q1 = renderExprBoldNoOp(item.q1);
+    const q2 = (item.q2 ?? "").trim();
     el.innerHTML = `
       <div class="q-line1"><span class="line1-text"></span></div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    setExpr(el.querySelector(".line1-text"), q1);
+    const l1 = el.querySelector(".q-line1 .line1-text");
+    setExpr(l1, q1);
     scheduleFit();
     return;
   }
 
   // answer
-  const a1 = (item.a1 ?? "").toString().trim();
-  const a2 = (item.a2_html ?? "").toString().trim();
+  const a1 = ((item.a1 ?? "")).trim();
+  const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
     <div class="a-line1"><span class="line1-text"></span></div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  setExpr(el.querySelector(".line1-text"), a1);
+  const l1 = el.querySelector(".a-line1 .line1-text");
+  setExpr(l1, a1);
   scheduleFit();
 }
 
@@ -219,32 +271,28 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // Reset transform for accurate measures
-  content.style.transform = "none";
-  content.style.transformOrigin = "50% 50%";
+  // Réinitialise l'échelle (centrage assuré par CSS translate(-50%,-50%))
+  content.style.setProperty("--fit-scale", "1");
 
   const cs = getComputedStyle(circle);
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  // Marge conservatrice pour éviter tout rognage sur iPhone
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.84);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.90);
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
   const line1 = content.querySelector(".line1-text");
-  const line2 = content.querySelector(".q-line2, .a-line2");
+  const line2 = content.querySelector(".q-line2,.a-line2");
 
-  const w1 = line1 ? line1.scrollWidth : 0;
-  const w2 = line2 ? line2.scrollWidth : 0;
-  const neededW = Math.max(w1, w2, 1);
+  const neededW = Math.max(line1 ? line1.scrollWidth : 0, line2 ? line2.scrollWidth : 0, 1);
   const neededH = Math.max(content.scrollHeight, 1);
 
   let s = 1;
   s = Math.min(s, availW / neededW);
   s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.25, Math.min(1, s)) * 0.99;
-  content.style.transform = `translateZ(0) scale(${s})`;
+  s = Math.max(0.5, Math.min(1, s)) * 0.99;
+  content.style.setProperty("--fit-scale", String(s));
 }
 
 function scheduleFit(){
@@ -256,7 +304,7 @@ function scheduleFit(){
   });
 }
 
-/* Refit automatique sur changements de taille (desktop + iPhone) */
+/* Refit automatique sur changements de taille */
 (function installRefitHooks(){
   let raf = null;
   const refitSoon = () => {
@@ -270,8 +318,8 @@ function scheduleFit(){
     const ro = new ResizeObserver(refitSoon);
     const circle = document.querySelector(".circle");
     const content = document.getElementById("content");
-    if (circle) ro.observe(circle);
-    if (content) ro.observe(content);
+    if(circle) ro.observe(circle);
+    if(content) ro.observe(content);
   }catch(e){}
 })();
 
