@@ -566,3 +566,12 @@ body{
   opacity: 0.8; /* ajuste librement : 0.85, 0.8, etc. */
 }
 
+/* Exposants mathématiques */
+.content sup,
+.a-line sup {
+  font-size: 0.6em;
+  vertical-align: super;
+  line-height: 0;
+}
+
+
