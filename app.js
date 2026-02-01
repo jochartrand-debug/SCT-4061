@@ -2,7 +2,7 @@ let tapLocked = false;
 
 // Unités de mesure — Q/R
 // - Questions au hasard (deck) ; épuisement ; retour accueil
-// - A × B / A ÷ B : seul A et B en gras (× ÷ non gras)
+// - A × B : seul A et B en gras (× non gras)
 // - Deuxième ligne des questions : jamais en gras
 // - Deuxième ligne des réponses : contenu en italique (sans parenthèses)
 
@@ -31,12 +31,6 @@ const DATA = [
     "a1": "Courant",
     "a2_html": "(<span class=\"italic\">I</span>)"
   },
- {
-    "q1": "mètre",
-    "q2": "(m)",
-    "a1": "Distance",
-    "a2_html": "(<span class=\"italic\">d</span>)"
-  },
   {
     "q1": "volt",
     "q2": "(V)",
@@ -55,25 +49,19 @@ const DATA = [
     "a1": "Wh",
     "a2_html": ""
   },
-   {
-    "q1": "mètre ÷ seconde",
-    "q2": "",
-    "a1": "vitesse",
-    "a2_html": ""
-  },
 {
     "q1": "coulomb ÷ seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
-  {
+{
     "q1": "joule ÷ seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
-  {
+{
     "q1": "ampère x heure",
     "q2": "",
     "a1": "Ah",
@@ -103,7 +91,7 @@ const DATA = [
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
   },
-  {
+{
     "q1": "seconde",
     "q2": "(s)",
     "a1": "Temps",
@@ -115,12 +103,13 @@ const card = document.getElementById("card");
 const el = document.getElementById("content");
 
 const state = {
-  mode: "home",
+  mode: "home", // "home" | "question" | "answer"
   order: [],
   pos: 0,
   i: 0
 };
 
+// Dim global (QUESTION → RÉPONSE)
 async function playTransitionQA(){
   document.body.classList.add("flash-answer");
   await new Promise(r => setTimeout(r, 140));
@@ -160,123 +149,79 @@ function esc(s){
 }
 
 function htmlToText(s){
-  // Nettoie un éventuel HTML résiduel dans les données pour n'afficher que du texte.
   const div = document.createElement("div");
   div.innerHTML = (s ?? "").toString();
   return (div.textContent || "").trim();
 }
 
-function renderLine1(targetSpan, s){
-  // Construit la ligne 1 en DOM :
-  // - texte en gras (.qb)
-  // - opérateurs × ÷ - non gras (.op)
-  // - si "a/b" (un seul slash), rend une fraction empilée (Option B)
-  if(!targetSpan) return;
+function renderLine1HTML(s){
+  // Option B: fraction empilée si exactement un "/" (ex: coulomb/seconde)
   const txt = htmlToText(s);
-  targetSpan.textContent = "";
-
-  // Option B: fraction empilée si un seul "/" et pas vide
   const parts = txt.split("/");
   if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
-    const frac = document.createElement("span");
-    frac.className = "frac";
-
-    const num = document.createElement("span");
-    num.className = "num qb";
-    num.textContent = parts[0].trim();
-
-    const bar = document.createElement("span");
-    bar.className = "bar";
-
-    const den = document.createElement("span");
-    den.className = "den qb";
-    den.textContent = parts[1].trim();
-
-    frac.appendChild(num);
-    frac.appendChild(bar);
-    frac.appendChild(den);
-    targetSpan.appendChild(frac);
-    return;
+    return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
   }
 
-  // Sinon: texte + opérateurs
-  const frag = document.createDocumentFragment();
+  // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
+  let out = "";
   let buf = "";
   const flush = () => {
-    if(!buf) return;
-    const w = document.createElement("span");
-    w.className = "qb";
-    w.textContent = buf;
-    frag.appendChild(w);
-    buf = "";
+    if(buf){
+      out += `<span class="qb">${esc(buf)}</span>`;
+      buf = "";
+    }
   };
 
   for(let i=0;i<txt.length;i++){
     const ch = txt[i];
     if(ch === "×" || ch === "÷" || ch === "-"){
       flush();
-      const op = document.createElement("span");
-      op.className = "op" + (ch === "-" ? " hyph" : "");
-      op.textContent = ch;
-      frag.appendChild(op);
+      out += `<span class="op${ch==="-" ? " hyph":""}">${ch}</span>`;
     }else{
       buf += ch;
     }
   }
   flush();
-  targetSpan.appendChild(frag);
+  return out || `<span class="qb">${esc(txt)}</span>`;
 }
 
 
-
-/* ============================
-   BOLD sans opérateurs × ÷ -
-   ============================ */
 function renderExprBoldNoOp(s){
+  // Rend:
+  // - "A x B" ou "A × B" : A et B en gras, × non gras
+  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
   const txt = (s ?? "").trim();
-  if (!txt) return "";
-
-  // Normalisation × ÷ x
+  // Normalise multiplication sans casser des mots (ex: "Lux")
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
-    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/\s+[x×]\s+/g, " × ")
-    .replace(/\s+÷\s+/g, " ÷ ")
     .replace(/\s+/g, " ")
     .trim();
 
-  // 1) Multiplication
-  let parts = norm.split(/\s+×\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += ` <span class="mult">×</span> <span class="qb">${esc(parts[i])}</span>`;
+  if (!txt) return "";
+
+  // 1) Multiplication (espaces autour)
+  const mulParts = norm.split(/\s+×\s+/);
+  if (mulParts.length > 1){
+    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
+    for (let k = 1; k < mulParts.length; k++){
+      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
     }
     return html;
   }
 
-  // 2) Division
-  parts = norm.split(/\s+÷\s+/);
-  if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
-    for (let i = 1; i < parts.length; i++){
-      html += ` <span class="div">÷</span> <span class="qb">${esc(parts[i])}</span>`;
+  // 2) Composés avec trait d'union (sans espaces)
+  const hyParts = norm.split(/-/);
+  if (hyParts.length > 1){
+    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
+    for (let k = 1; k < hyParts.length; k++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
     }
     return html;
   }
 
-  // 3) Trait d’union
-  const hy = norm.split(/-/);
-  if (hy.length > 1){
-    let html = `<span class="qb">${esc(hy[0])}</span>`;
-    for (let i = 1; i < hy.length; i++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
-    }
-    return html;
-  }
-
-  // 4) Texte simple
+  // 3) Texte simple
   return `<span class="qb">${esc(norm)}</span>`;
 }
 
@@ -284,28 +229,21 @@ function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
 
-  // Affiche l'image uniquement sur l'accueil (évite toute superposition)
   const homeImg = document.querySelector(".circle img");
-  if(homeImg){
-    homeImg.style.display = (state.mode === "home") ? "block" : "none";
-  }
+  if(homeImg){ homeImg.style.display = (state.mode === "home") ? "block" : "none"; }
 
-  if (state.mode === "home") {
-    // accueil: ne pas vider le conteneur interactif
-    return;
-  }
+  if (state.mode === "home") return;
 
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
     const q1 = item.q1 ?? "";
     const q2 = (item.q2 ?? "").trim();
-
     el.innerHTML = `
-      <div class="q-line1"><span class="line1-text"></span></div>
+      <div class="q-line1">${renderLine1HTML(q1)}</div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    renderLine1(el.querySelector(".q-line1 .line1-text"), q1);
+    scheduleFit();
     return;
   }
 
@@ -313,10 +251,50 @@ function render(){
   const a1 = item.a1 ?? "";
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
-    <div class="a-line1"><span class="line1-text"></span></div>
+    <div class="a-line1">${renderLine1HTML(a1)}</div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
-  renderLine1(el.querySelector(".a-line1 .line1-text"), a1);
 }
 
-// … (le reste du fichier est inchangé)
+
+// ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
+
+
+async function handleTap(){
+  if (tapLocked) return;
+  tapLocked = true;
+
+  try {
+    if (state.mode === "home"){
+      startSession();
+      state.mode = "question";
+      render();
+      return;
+    }
+
+    if (state.mode === "question"){
+      await playTransitionQA();
+      state.mode = "answer";
+      render();
+      return;
+    }
+
+    const nxt = nextIndex();
+    if (nxt === null) return;
+    state.mode = "question";
+    render();
+
+  } finally {
+    setTimeout(() => {
+      tapLocked = false;
+    }, 250);
+  }
+}
+
+card.addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  handleTap().catch(console.error);
+});
+
+
+render();

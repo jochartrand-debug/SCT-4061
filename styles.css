@@ -424,72 +424,63 @@ body{
 .q-line2,.a-line2{ white-space:normal; }
 
 
-/* ===== NO CIRCLE FOR Q/A : cercle uniquement sur l'accueil ===== */
-
-/* Base: la zone .circle devient un simple conteneur plein écran */
-.circle{
+/* ===== FINAL: cercle uniquement pour l'image d'accueil ; Q/A sans cercle ===== */
+.card.question .circle,
+.card.answer  .circle{
   width: 100% !important;
-  height: 100% !important;
-  border-radius: 0 !important;
+  height: auto !important;
   border: none !important;
+  border-radius: 0 !important;
   padding: 0 !important;
+  background: transparent !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  overflow: visible !important;
-  position: relative !important;
 }
 
-/* Accueil: on recrée le cercle autour de l'image */
+/* Cercle seulement à l'accueil */
 .card.home .circle{
   width: min(78vmin, 640px) !important;
   height: min(78vmin, 640px) !important;
   border-radius: 50% !important;
   border: 6px solid #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   overflow: hidden !important;
   background: transparent !important;
 }
 
-.card.home .circle img{
-  display: block;
-  max-width: 70%;
-  max-height: 70%;
-}
-
-/* Hors accueil: on cache l'image pour éviter toute superposition */
+/* Évite la superposition: on cache l'image hors accueil */
 .card.question .circle img,
-.card.answer .circle img{
+.card.answer  .circle img{
   display: none !important;
 }
 
-/* Contenu (questions/réponses) centré sans scale */
-.content, #content{
+/* Contenu texte centré sans scale */
+#content, .content{
   position: static !important;
   transform: none !important;
   width: 100%;
   max-width: 92vw;
-  text-align: center;
-}
-
-/* Lignes shrink-wrap */
-.q-line1,.q-line2,.a-line1,.a-line2{
-  display: block;
   margin: 0 auto;
   text-align: center;
 }
 
-/* Texte principal: gras pour les mots, non gras pour opérateurs */
+/* Espace entre ligne 1 et ligne 2 */
+.q-line1, .a-line1{
+  margin-bottom: 0.5em;
+}
+
+/* Gras mots, opérateurs non gras */
 .qb{ font-weight: 800; }
 .op{
   font-weight: 400 !important;
   font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   font-synthesis: none;
 }
-.op.hyph{
-  /* aucun espace ajouté autour : la chaîne contient déjà le bon texte */
-}
 
-/* ===== Option B: fraction empilée ===== */
+/* Fraction empilée (Option B) */
 .frac{
   display: inline-grid;
   grid-template-rows: auto 0.12em auto;
@@ -505,8 +496,3 @@ body{
 .frac .num, .frac .den{
   white-space: nowrap;
 }
-
-
-/* Espacement entre ligne 1 et ligne 2 */
-.q-line1{ margin-bottom: 0.5em; }
-.a-line1{ margin-bottom: 0.5em; }
