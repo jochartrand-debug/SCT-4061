@@ -1,6 +1,4 @@
 let tapLocked = false;
-document.title = "Unités de mesure (2026-01-31-2035)";
-
 
 // Unités de mesure — Q/R
 // - Questions au hasard (deck) ; épuisement ; retour accueil
@@ -100,10 +98,6 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">t</span>)"
   }
 ];
-// ===== BUILD STAMP =====
-console.log("APP BUILD 2026-01-31-2035");
-window.__APP_BUILD__ = "2026-01-31-2035";
-
 
 const card = document.getElementById("card");
 const el = document.getElementById("content");
