@@ -37,6 +37,12 @@ const DATA = [
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
+ {
+    "q1": "watt x seconde",
+    "q2": "",
+    "a1": "joule",
+    "a2_html": ""
+  },
   {
     "q1": "volt x ampère",
     "q2": "",
@@ -47,6 +53,18 @@ const DATA = [
     "q1": "watt x heure",
     "q2": "",
     "a1": "Wh",
+    "a2_html": ""
+  },
+{
+    "q1": "Distance ÷ Temps",
+    "q2": "",
+    "a1": "Vitesse",
+    "a2_html": ""
+  },
+{
+    "q1": "mètre ÷ seconde",
+    "q2": "",
+    "a1": "m/s",
     "a2_html": ""
   },
 {
@@ -90,6 +108,12 @@ const DATA = [
     "q2": "(W)",
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
+  },
+{
+    "q1": "mètre",
+    "q2": "(m)",
+    "a1": "Distance",
+    "a2_html": "(<span class=\"italic\">d</span>)"
   },
 {
     "q1": "seconde",
@@ -151,12 +175,11 @@ function esc(s){
 function renderExprBoldNoOp(s){
   // Objectif :
   // - Opérateurs (× ÷ -) JAMAIS en gras
-  // - Opérandes seulement en gras (via .qb)
-  // - Pas d'espaces "texte" autour des opérateurs (évite décentrage iOS)
+  // - Opérandes seulement en gras
+  // - Robuste même si .q-line1 est en gras : on force un wrapper en normal
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
-  // Normalise × ÷ x et espaces
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
@@ -166,39 +189,45 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
+  const WRAP_START = `<span class="expr" style="font-weight:400 !important">`;
+  const WRAP_END = `</span>`;
+  const BOLD = (t) => `<span class="qb" style="font-weight:700 !important">${esc(t)}</span>`;
+  const OP = (ch, cls) => `<span class="${cls}" style="font-weight:400 !important">${ch}</span>`;
+
   // 1) Multiplication
   let parts = norm.split(/\s+×\s+/);
   if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    let html = WRAP_START + BOLD(parts[0]);
     for (let i = 1; i < parts.length; i++){
-      html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
+      html += ` ${OP("×","mult")} ${BOLD(parts[i])}`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html + WRAP_END;
   }
 
   // 2) Division
   parts = norm.split(/\s+÷\s+/);
   if (parts.length > 1){
-    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    let html = WRAP_START + BOLD(parts[0]);
     for (let i = 1; i < parts.length; i++){
-      html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
+      html += ` ${OP("÷","div")} ${BOLD(parts[i])}`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html + WRAP_END;
   }
 
   // 3) Trait d’union (sans espaces)
   const hy = norm.split(/-/);
   if (hy.length > 1){
-    let html = `<span class="qb">${esc(hy[0])}</span>`;
+    let html = WRAP_START + BOLD(hy[0]);
     for (let i = 1; i < hy.length; i++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
+      html += `${OP("-","hyph")}${BOLD(hy[i])}`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html + WRAP_END;
   }
 
   // 4) Texte simple
-  return `<span class="qb">${esc(norm)}</span>`;
+  return WRAP_START + BOLD(norm) + WRAP_END;
 }
+
 
 function render(){
   card.classList.remove("home","question","answer");
@@ -235,7 +264,6 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
-  // reset transform for measurement
   content.style.transform = "none";
   content.style.transformOrigin = "50% 50%";
 
@@ -246,43 +274,36 @@ function fitToCircle(){
   const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
   const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
-  // Mesure robuste : clone du contenu en "max-content" hors-écran
-  const clone = content.cloneNode(true);
-  clone.style.position = "absolute";
-  clone.style.visibility = "hidden";
-  clone.style.left = "-10000px";
-  clone.style.top = "0";
-  clone.style.width = "max-content";
-  clone.style.maxWidth = "none";
-  clone.style.whiteSpace = "nowrap";
-  clone.style.transform = "none";
-  document.body.appendChild(clone);
+  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
+  if(!lines.length) return;
 
-  const rect = clone.getBoundingClientRect();
-  const neededW = Math.ceil(rect.width) + 6;   // marge kerning/arrondis iOS
-  const neededH = Math.ceil(rect.height) + 2;
-
-  document.body.removeChild(clone);
+  let neededW = 0;
+  lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
+  const neededH = content.scrollHeight;
 
   let s = 1;
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  // Autorise un scale plus petit pour les très longues expressions
-  s = Math.max(0.25, Math.min(1, s)) * 0.99;
+  s = Math.max(0.5, Math.min(1, s)) * 0.99;
+  // 1) Applique le scale
+  content.style.transform = `translateZ(0) scale(${s})`;
 
-  // Petit ajustement visuel: les expressions avec ÷ sont légèrement plus longues (padding + glyph)
-  // Sur iOS, ça peut donner un centrage "visuel" imparfait car ça frôle le bord du cercle.
-  // On réduit donc un tout petit peu seulement quand ÷ est présent.
+  // 2) Recentre finement (surtout utile sur iOS) quand il y a ÷ :
+  //    on mesure le centre réel après scale, puis on compense avec translateX.
   if (content.querySelector(".div")){
-    s *= 0.97;
-  }
+    const cRect = circle.getBoundingClientRect();
+    const tRect = content.getBoundingClientRect();
+    const dxScreen = (cRect.left + cRect.width/2) - (tRect.left + tRect.width/2);
 
-  // Applique le scale tout en préservant le centrage horizontal parfait
-  content.style.transform = `translate(-50%, -50%) scale(${s})`;
-  content.style.position = "absolute";
-  content.style.left = "50%";
-  content.style.top = "50%";
+    // Convertit en unités "avant scale" puisque translateX est aussi scalé.
+    let dx = dxScreen / s;
+
+    // Clamp pour éviter des corrections trop fortes / oscillations
+    dx = Math.max(-12, Math.min(12, dx));
+
+    content.style.transform = `translateZ(0) translateX(${dx}px) scale(${s})`;
+  }
 }
 
 function scheduleFit(){
