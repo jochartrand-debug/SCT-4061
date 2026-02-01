@@ -15,50 +15,50 @@ const DATA = [
   },
 {
     "q1": "kilo",
-    "q2": "",
-    "a1_html": "10<sup>3</sup>",
+    "q2": "(k)",
+    "a1_html": "× 10<sup>3</sup>",
     "a2_html": ""
   },
 {
     "q1": "milli",
-    "q2": "",
-    "a1_html": "10<sup>-3</sup>",
+    "q2": "(m)",
+    "a1_html": "× 10<sup>-3</sup>",
     "a2_html": ""
   },
 {
     "q1": "Mega",
-    "q2": "",
-    "a1_html": "10<sup>6</sup>",
+    "q2": "(M)",
+    "a1_html": "× 10<sup>6</sup>",
     "a2_html": ""
   },
 {
     "q1": "Giga",
-    "q2": "",
-    "a1_html": "10<sup>9</sup>",
+    "q2": "(G)",
+    "a1_html": "× 10<sup>9</sup>",
     "a2_html": ""
   },
 {
     "q1": "Micro",
-    "q2": "",
-    "a1_html": "10<sup>-6</sup>",
+    "q2": "(µ)",
+    "a1_html": "× 10<sup>-6</sup>",
     "a2_html": ""
   },
 {
     "q1": "Tera",
-    "q2": "",
-    "a1_html": "10<sup>12</sup>",
+    "q2": "(T)",
+    "a1_html": "× 10<sup>12</sup>",
     "a2_html": ""
   },
 {
     "q1": "Nano",
-    "q2": "",
-    "a1_html": "10<sup>-9</sup>",
+    "q2": "(n)",
+    "a1_html": "× 10<sup>-9</sup>",
     "a2_html": ""
   },
 {
     "q1": "Pico",
     "q2": "",
-    "a1_html": "10<sup>-12</sup>",
+    "a1_html": "× 10<sup>-12</sup>",
     "a2_html": ""
   },
   {
