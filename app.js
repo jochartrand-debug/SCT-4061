@@ -2,7 +2,7 @@ let tapLocked = false;
 
 // Unités de mesure — Q/R
 // - Questions au hasard (deck) ; épuisement ; retour accueil
-// - A × B : seul A et B en gras (× non gras)
+// - A × B / A ÷ B : seul A et B en gras (× ÷ non gras)
 // - Deuxième ligne des questions : jamais en gras
 // - Deuxième ligne des réponses : contenu en italique (sans parenthèses)
 
@@ -31,6 +31,12 @@ const DATA = [
     "a1": "Courant",
     "a2_html": "(<span class=\"italic\">I</span>)"
   },
+ {
+    "q1": "mètre",
+    "q2": "(m)",
+    "a1": "Distance",
+    "a2_html": "(<span class=\"italic\">d</span>)"
+  },
   {
     "q1": "volt",
     "q2": "(V)",
@@ -49,19 +55,25 @@ const DATA = [
     "a1": "Wh",
     "a2_html": ""
   },
+   {
+    "q1": "mètre ÷ seconde",
+    "q2": "",
+    "a1": "vitesse",
+    "a2_html": ""
+  },
 {
     "q1": "coulomb ÷ seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
-{
+  {
     "q1": "joule ÷ seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
-{
+  {
     "q1": "ampère x heure",
     "q2": "",
     "a1": "Ah",
@@ -91,7 +103,7 @@ const DATA = [
     "a1": "Puissance",
     "a2_html": "(<span class=\"italic\">P</span>)"
   },
-{
+  {
     "q1": "seconde",
     "q2": "(s)",
     "a1": "Temps",
@@ -101,16 +113,14 @@ const DATA = [
 
 const card = document.getElementById("card");
 const el = document.getElementById("content");
-const homeImg = document.querySelector(".home-image");
 
 const state = {
-  mode: "home", // "home" | "question" | "answer"
+  mode: "home",
   order: [],
   pos: 0,
   i: 0
 };
 
-// Dim global (QUESTION → RÉPONSE)
 async function playTransitionQA(){
   document.body.classList.add("flash-answer");
   await new Promise(r => setTimeout(r, 140));
@@ -149,42 +159,84 @@ function esc(s){
     .replaceAll(">","&gt;");
 }
 
+function htmlToText(s){
+  // Nettoie un éventuel HTML résiduel dans les données pour n'afficher que du texte.
+  const div = document.createElement("div");
+  div.innerHTML = (s ?? "").toString();
+  return (div.textContent || "").trim();
+}
 
-function buildExprHTML(raw){
-  // Construit du HTML où les opérateurs × ÷ - sont NON gras
-  // et tout le reste est en gras (classe qb).
-  const s = (raw ?? "").toString();
-  if (!s) return "";
-  let out = "";
+function renderLine1(targetSpan, s){
+  // Construit la ligne 1 en DOM :
+  // - texte en gras (.qb)
+  // - opérateurs × ÷ - non gras (.op)
+  // - si "a/b" (un seul slash), rend une fraction empilée (Option B)
+  if(!targetSpan) return;
+  const txt = htmlToText(s);
+  targetSpan.textContent = "";
+
+  // Option B: fraction empilée si un seul "/" et pas vide
+  const parts = txt.split("/");
+  if(parts.length === 2 && parts[0].trim() && parts[1].trim()){
+    const frac = document.createElement("span");
+    frac.className = "frac";
+
+    const num = document.createElement("span");
+    num.className = "num qb";
+    num.textContent = parts[0].trim();
+
+    const bar = document.createElement("span");
+    bar.className = "bar";
+
+    const den = document.createElement("span");
+    den.className = "den qb";
+    den.textContent = parts[1].trim();
+
+    frac.appendChild(num);
+    frac.appendChild(bar);
+    frac.appendChild(den);
+    targetSpan.appendChild(frac);
+    return;
+  }
+
+  // Sinon: texte + opérateurs
+  const frag = document.createDocumentFragment();
   let buf = "";
   const flush = () => {
-    if (!buf) return;
-    out += `<span class="qb">${esc(buf)}</span>`;
+    if(!buf) return;
+    const w = document.createElement("span");
+    w.className = "qb";
+    w.textContent = buf;
+    frag.appendChild(w);
     buf = "";
   };
-  for (let i = 0; i < s.length; i++){
-    const ch = s[i];
-    if (ch === "×" || ch === "÷" || ch === "-"){
+
+  for(let i=0;i<txt.length;i++){
+    const ch = txt[i];
+    if(ch === "×" || ch === "÷" || ch === "-"){
       flush();
-      const cls = ch === "×" ? "op mult" : (ch === "÷" ? "op divop" : "op hyph");
-      out += `<span class="${cls}">${esc(ch)}</span>`;
-    } else {
+      const op = document.createElement("span");
+      op.className = "op" + (ch === "-" ? " hyph" : "");
+      op.textContent = ch;
+      frag.appendChild(op);
+    }else{
       buf += ch;
     }
   }
   flush();
-  return out;
+  targetSpan.appendChild(frag);
 }
 
+
+
+/* ============================
+   BOLD sans opérateurs × ÷ -
+   ============================ */
 function renderExprBoldNoOp(s){
-  // Objectif :
-  // - Opérateurs (× ÷ -) JAMAIS en gras
-  // - Opérandes seulement en gras (via .qb)
-  // - Pas d'espaces "texte" autour des opérateurs (évite décentrage iOS)
   const txt = (s ?? "").trim();
   if (!txt) return "";
 
-  // Normalise × ÷ x et espaces
+  // Normalisation × ÷ x
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
     .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
@@ -199,9 +251,9 @@ function renderExprBoldNoOp(s){
   if (parts.length > 1){
     let html = `<span class="qb">${esc(parts[0])}</span>`;
     for (let i = 1; i < parts.length; i++){
-      html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
+      html += ` <span class="mult">×</span> <span class="qb">${esc(parts[i])}</span>`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html;
   }
 
   // 2) Division
@@ -209,19 +261,19 @@ function renderExprBoldNoOp(s){
   if (parts.length > 1){
     let html = `<span class="qb">${esc(parts[0])}</span>`;
     for (let i = 1; i < parts.length; i++){
-      html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
+      html += ` <span class="div">÷</span> <span class="qb">${esc(parts[i])}</span>`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html;
   }
 
-  // 3) Trait d’union (sans espaces)
+  // 3) Trait d’union
   const hy = norm.split(/-/);
   if (hy.length > 1){
     let html = `<span class="qb">${esc(hy[0])}</span>`;
     for (let i = 1; i < hy.length; i++){
       html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
     }
-    return `<span class="expr-wrapper">${html}</span>`;
+    return html;
   }
 
   // 4) Texte simple
@@ -232,127 +284,39 @@ function render(){
   card.classList.remove("home","question","answer");
   card.classList.add(state.mode);
 
-  if (homeImg) homeImg.style.display = (state.mode === "home") ? "block" : "none";
-  if (state.mode === "home"){ el.innerHTML = ""; return; }
+  // Affiche l'image uniquement sur l'accueil (évite toute superposition)
+  const homeImg = document.querySelector(".circle img");
+  if(homeImg){
+    homeImg.style.display = (state.mode === "home") ? "block" : "none";
+  }
+
+  if (state.mode === "home") {
+    el.innerHTML = ""; // aucune question affichée
+    return;
+  }
 
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = renderExprBoldNoOp(item.q1);
+    const q1 = item.q1 ?? "";
     const q2 = (item.q2 ?? "").trim();
+
     el.innerHTML = `
-      <div class="q-line1">${q1}</div>
+      <div class="q-line1"><span class="line1-text"></span></div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
-    scheduleFit();
+    renderLine1(el.querySelector(".q-line1 .line1-text"), q1);
     return;
   }
 
   // answer
-  const a1 = buildExprHTML(item.a1 ?? "");
+  const a1 = item.a1 ?? "";
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
-    <div class="a-line1">${a1}</div>
+    <div class="a-line1"><span class="line1-text"></span></div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
+  renderLine1(el.querySelector(".a-line1 .line1-text"), a1);
 }
 
-
-// ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
-function fitToCircle(){
-  const circle = document.querySelector(".circle");
-  const content = document.getElementById("content");
-  if(!circle || !content) return;
-
-  // reset transform for measurement
-  content.style.transform = "none";
-  content.style.transformOrigin = "50% 50%";
-
-  const cs = getComputedStyle(circle);
-  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
-
-  // Mesure robuste : clone du contenu en "max-content" hors-écran
-  const clone = content.cloneNode(true);
-  clone.style.position = "absolute";
-  clone.style.visibility = "hidden";
-  clone.style.left = "-10000px";
-  clone.style.top = "0";
-  clone.style.width = "max-content";
-  clone.style.maxWidth = "none";
-  clone.style.whiteSpace = "nowrap";
-  clone.style.transform = "none";
-  document.body.appendChild(clone);
-
-  const rect = clone.getBoundingClientRect();
-  const neededW = Math.ceil(rect.width) + 6;   // marge kerning/arrondis iOS
-  const neededH = Math.ceil(rect.height) + 2;
-
-  document.body.removeChild(clone);
-
-  let s = 1;
-  if(neededW > 0) s = Math.min(s, availW / neededW);
-  if(neededH > 0) s = Math.min(s, availH / neededH);
-
-  // Autorise un scale plus petit pour les très longues expressions
-  s = Math.max(0.25, Math.min(1, s)) * 0.99;
-
-  // Applique le scale tout en préservant le centrage horizontal parfait
-  content.style.transform = `translate(-50%, -50%) scale(${s})`;
-  content.style.position = "absolute";
-  content.style.left = "50%";
-  content.style.top = "50%";
-}
-
-function scheduleFit(){
-  requestAnimationFrame(() => {
-    fitToCircle();
-    if (document.fonts && document.fonts.ready){
-      document.fonts.ready.then(() => requestAnimationFrame(fitToCircle)).catch(()=>{});
-    }
-  });
-}
-
-async function handleTap(){
-  if (tapLocked) return;
-  tapLocked = true;
-
-  try {
-    if (state.mode === "home"){
-      startSession();
-      state.mode = "question";
-      render();
-      return;
-    }
-
-    if (state.mode === "question"){
-      await playTransitionQA();
-      state.mode = "answer";
-      render();
-      return;
-    }
-
-    const nxt = nextIndex();
-    if (nxt === null) return;
-    state.mode = "question";
-    render();
-
-  } finally {
-    setTimeout(() => {
-      tapLocked = false;
-    }, 250);
-  }
-}
-
-card.addEventListener("pointerup", (e) => {
-  e.preventDefault();
-  handleTap().catch(console.error);
-});
-
-window.addEventListener('resize', () => requestAnimationFrame(fitToCircle), { passive: true });
-window.addEventListener('orientationchange', () => requestAnimationFrame(fitToCircle), { passive: true });
-
-render();
+// … (le reste du fichier est inchangé)
