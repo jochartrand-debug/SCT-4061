@@ -50,7 +50,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "coulomb ÷ seconde",
+    "q1": "coulomb/seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
