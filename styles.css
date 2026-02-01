@@ -111,20 +111,17 @@ body{
 .card.answer #content{ display:block; }
 
 .content{
-  position: absolute;
-  left: 50%;
-  top: 50%;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   text-align:center;
-  width: auto;
-  max-width: 100%;
-  transform: translate(-50%, -50%) translateZ(0) scale(var(--fit-scale, 1));
-  transform-origin: 50% 50%;
+  width:auto;
+  max-width:100%;
   will-change: transform;
-  font-synthesis: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
 }
 
 .q-line1, .a-line1{
@@ -430,17 +427,186 @@ body{
 .q-line1,.a-line1{ white-space:nowrap; }
 .q-line2,.a-line2{ white-space:normal; }
 
+/* === FIX FINAL: opérateurs non gras + centrage iOS stable === */
 
-/* Ligne 1 mesurable + opérateurs non gras */
-.q-line1 .line1-text,
-.a-line1 .line1-text{
-  display:inline-block;
-  white-space:nowrap;
-  max-width:100%;
+/* Le conteneur "content" et la ligne 1 prennent toute la largeur pour éviter le shrink-to-fit */
+#content{ width: 100% !important; }
+.q-line1, .a-line1{
+  width: 100% !important;
+  display: block !important;
+  text-align: center !important;
 }
 
+/* Opérandes en gras (ta police ExtraBold) */
+.q-line1 .qb, .a-line1 .qb{
+  font-family: "InterExtraBold", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-weight: 400; /* la fonte ExtraBold porte déjà le gras visuel */
+}
+
+/* Opérateurs: police régulière + jamais en gras + padding pour les espaces */
+.q-line1 .mult, .a-line1 .mult,
+.q-line1 .div,  .a-line1 .div,
+.q-line1 .hyph, .a-line1 .hyph{
+  font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  font-weight: 400 !important;
+  display: inline-block;
+}
+
+/* Espacement autour des opérateurs × et ÷ (pas sur le trait d'union) */
+.q-line1 .mult, .a-line1 .mult{
+  padding: 0 0.18em;
+}
+.q-line1 .div, .a-line1 .div{
+  padding: 0 0.25em; /* Plus d'espace pour ÷ qui est visuellement plus étroit */
+}
+.q-line1 .hyph, .a-line1 .hyph{
+  padding: 0;
+}
+
+/* Wrapper pour forcer le centrage correct des expressions composées */
+.expr-wrapper{
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* === FIX v22 : ne pas affecter l'accueil ===
+   Les overrides v21 doivent s'appliquer uniquement aux cartes Question/Réponse,
+   sinon le logo (éclair) de l'accueil peut se superposer au contenu. */
+
+.card.question .content,
+.card.answer  .content{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Ligne 1 shrink-to-fit seulement dans les cartes */
+.card.question .q-line1,
+.card.answer  .a-line1{
+  width: auto !important;
+  max-width: 100% !important;
+  display: inline-block !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+/* Ligne 2 */
+.card.question .q-line2,
+.card.answer  .a-line2{
+  width: auto !important;
+  display: block !important;
+  text-align: center !important;
+}
+
+/* Wrapper */
+.card.question .expr-wrapper,
+.card.answer  .expr-wrapper{
+  display: inline-block !important;
+  white-space: nowrap !important;
+}
+
+/* Opérateurs (dans cartes seulement) */
+.card.question .q-line1 .mult,
+.card.question .q-line1 .div,
+.card.question .q-line1 .hyph,
+.card.answer  .a-line1 .mult,
+.card.answer  .a-line1 .div,
+.card.answer  .a-line1 .hyph{
+  font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  font-weight: 400 !important;
+}
+
+.card.question .q-line1 .mult,
+.card.question .q-line1 .div,
+.card.answer  .a-line1 .mult,
+.card.answer  .a-line1 .div{
+  padding: 0 0.18em !important;
+}
+.card.question .q-line1 .hyph,
+.card.answer  .a-line1 .hyph{
+  padding: 0 !important;
+}
+
+/* Assure que le logo d'accueil reste derrière et ne capte pas d'espace */
+.home-logo, .home-bolt, .home-image, .logo{
+  pointer-events: none;
+}
+
+
+/* ===== NO-CIRCLE MODE (v48) =====
+   On garde la structure HTML existante, mais on retire complètement l'effet "cercle"
+   et toute logique de fit/scale associée. Le centrage redevient un centrage normal.
+*/
+
+.circle{
+  width: auto !important;
+  height: auto !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  display: grid !important;
+  place-items: center !important;
+  position: static !important;
+}
+
+/* L'image d'accueil peut rester centrée */
+.card.home .circle{ border: none !important; }
+.card.home .home-image{
+  width: min(70vmin, 520px);
+  height: auto;
+}
+
+/* Contenu centré sans transform */
+.content, #content{
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  transform-origin: 50% 50% !important;
+  will-change: auto !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  max-width: min(92vw, 980px) !important;
+  margin: 0 auto !important;
+}
+
+/* Lignes: centrées, wrap permis */
+.q-line1, .a-line1{
+  display: block !important;
+  text-align: center !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+/* Taille plus stable sur petits écrans */
+.q-line1, .a-line1{
+  font-size: clamp(34px, 7.2vw, 110px) !important;
+  line-height: 1.08;
+}
+
+.q-line2, .a-line2{
+  font-size: clamp(24px, 5.2vw, 70px) !important;
+  text-align: center !important;
+  max-width: 100% !important;
+}
+
+/* Opérateurs NON gras (× ÷ -) */
 .op{
   font-weight: 400 !important;
   font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   font-synthesis: none;
 }
+
+/* Pas d'espaces ajoutés autour du tiret: setExpr n'en ajoute pas,
+   mais on évite tout espacement CSS accidentel. */
+.op{ letter-spacing: 0; }
