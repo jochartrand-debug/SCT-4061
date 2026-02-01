@@ -65,13 +65,13 @@ const DATA = [
     "q1": "coulomb",
     "q2": "(C)",
     "a1": "Charge",
-    "a2_html": "(<span class=\"italic\">Q</span>)"
+    "a2_html": "(<span class=\"italic\">q</span>)"
   },
   {
     "q1": "ampère-heure",
     "q2": "(Ah)",
     "a1": "Charge",
-    "a2_html": "(<span class=\"italic\">Q</span>)"
+    "a2_html": "(<span class=\"italic\">q</span>)"
   },
   {
     "q1": "ampère",
@@ -110,9 +110,21 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "mètre/seconde",
+    "q1": "m/s",
     "q2": "",
-    "a1": "m/s",
+    "a1": "Vitesse",
+    "a2_html": ""
+  },
+{
+    "q1": "m³/s",
+    "q2": "",
+    "a1": "Débit volumique",
+    "a2_html": ""
+  },
+{
+    "q1": "kg/s",
+    "q2": "",
+    "a1": "Débit massique",
     "a2_html": ""
   },
 {
