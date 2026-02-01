@@ -38,49 +38,49 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">T</span>)"
   },
  {
-    "q1": "watt x seconde",
+    "q1": "watt × seconde",
     "q2": "",
     "a1": "joule",
     "a2_html": ""
   },
   {
-    "q1": "volt x ampère",
+    "q1": "volt × ampère",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
   {
-    "q1": "watt x heure",
+    "q1": "watt × heure",
     "q2": "",
     "a1": "Wh",
     "a2_html": ""
   },
 {
-    "q1": "Distance : Temps",
+    "q1": "Distance ÷ Temps",
     "q2": "",
     "a1": "Vitesse",
     "a2_html": ""
   },
 {
-    "q1": "mètre : seconde",
+    "q1": "mètre ÷ seconde",
     "q2": "",
     "a1": "m/s",
     "a2_html": ""
   },
 {
-    "q1": "coulomb : seconde",
+    "q1": "coulomb ÷ seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
 {
-    "q1": "joule : seconde",
+    "q1": "joule ÷ seconde",
     "q2": "",
     "a1": "watt",
     "a2_html": ""
   },
 {
-    "q1": "ampère x heure",
+    "q1": "ampère × heure",
     "q2": "",
     "a1": "Ah",
     "a2_html": ""
