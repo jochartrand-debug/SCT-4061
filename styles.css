@@ -450,10 +450,12 @@ body{
   display: inline-block;
 }
 
-/* Espacement autour des opérateurs × et ÷ (pas sur le trait d’union) */
-.q-line1 .mult, .a-line1 .mult,
-.q-line1 .div,  .a-line1 .div{
+/* Espacement autour des opérateurs × et ÷ (pas sur le trait d'union) */
+.q-line1 .mult, .a-line1 .mult{
   padding: 0 0.18em;
+}
+.q-line1 .div, .a-line1 .div{
+  padding: 0 0.25em; /* Plus d'espace pour ÷ qui est visuellement plus étroit */
 }
 .q-line1 .hyph, .a-line1 .hyph{
   padding: 0;
