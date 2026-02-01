@@ -189,10 +189,16 @@ function renderExprBoldNoOp(s){
     .replace(/\s+/g, " ")
     .trim();
 
-  const WRAP_START = `<span class="expr" style="font-weight:400 !important">`;
+  const WRAP_START = `<span class="expr" style="font-weight:400">`;
   const WRAP_END = `</span>`;
-  const BOLD = (t) => `<span class="qb" style="font-weight:700 !important">${esc(t)}</span>`;
-  const OP = (ch, cls) => `<span class="${cls}" style="font-weight:400 !important">${ch}</span>`;
+  const BOLD = (t) => `<span class="qb" style="font-weight:700">${esc(t)}</span>`;
+  const OP = (ch, cls) => {
+    // Pour ÷, utiliser opacity et scale pour le rendre visuellement plus léger
+    if (ch === '÷') {
+      return `<span class="${cls}" style="font-weight:300 !important; opacity:0.85; display:inline-block; transform:scaleY(0.95);">${ch}</span>`;
+    }
+    return `<span class="${cls}" style="font-weight:400">${ch}</span>`;
+  };
 
   // 1) Multiplication
   let parts = norm.split(/\s+×\s+/);
