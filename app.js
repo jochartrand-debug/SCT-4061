@@ -148,6 +148,14 @@ function esc(s){
     .replaceAll(">","&gt;");
 }
 
+function htmlToText(s){
+  // Convertit un éventuel HTML (ex: <span>÷</span>) en texte pur, sans regex fragile.
+  const div = document.createElement("div");
+  div.innerHTML = (s ?? "").toString();
+  return (div.textContent || "").trim();
+}
+
+
 function setExpr(targetSpan, s){
   // Construit du DOM: texte + <span class="op">×</span> etc.
   // Aucun .replace() et aucun HTML fragile.
@@ -253,7 +261,7 @@ function render(){
   }
 
   // answer
-  const a1 = ((item.a1 ?? "")).trim();
+  const a1 = htmlToText((item.a1 ?? ""));
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
     <div class="a-line1"><span class="line1-text"></span></div>
