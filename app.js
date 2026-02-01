@@ -291,7 +291,7 @@ function render(){
   }
 
   if (state.mode === "home") {
-    el.innerHTML = ""; // aucune question affichée
+    // accueil: ne pas vider le conteneur interactif
     return;
   }
 

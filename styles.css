@@ -505,3 +505,8 @@ body{
 .frac .num, .frac .den{
   white-space: nowrap;
 }
+
+
+/* Espacement entre ligne 1 et ligne 2 */
+.q-line1{ margin-bottom: 0.5em; }
+.a-line1{ margin-bottom: 0.5em; }
