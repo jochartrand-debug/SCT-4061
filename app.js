@@ -149,41 +149,54 @@ function esc(s){
 }
 
 function renderExprBoldNoOp(s){
-  // Rend:
-  // - "A x B" ou "A × B" : A et B en gras, × non gras
-  // - "A-heure" (ou tout composé avec "-") : mots en gras, trait d’union non gras
+  // Objectif :
+  // - Opérateurs (× ÷ -) JAMAIS en gras
+  // - Opérandes seulement en gras (via .qb)
+  // - Pas d'espaces "texte" autour des opérateurs (évite décentrage iOS)
   const txt = (s ?? "").trim();
-  // Normalise multiplication sans casser des mots (ex: "Lux")
+  if (!txt) return "";
+
+  // Normalise × ÷ x et espaces
   const norm = txt
     .replace(/([^\s])×([^\s])/g, "$1 × $2")
+    .replace(/([^\s])÷([^\s])/g, "$1 ÷ $2")
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])x([A-Za-zÀ-ÖØ-öø-ÿ])/g, "$1 × $2")
     .replace(/\s+[x×]\s+/g, " × ")
+    .replace(/\s+÷\s+/g, " ÷ ")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!txt) return "";
-
-  // 1) Multiplication (espaces autour)
-  const mulParts = norm.split(/\s+×\s+/);
-  if (mulParts.length > 1){
-    let html = `<span class="qb">${esc(mulParts[0])}</span>`;
-    for (let k = 1; k < mulParts.length; k++){
-      html += ` <span class="mult">×</span> <span class="qb">${esc(mulParts[k])}</span>`;
+  // 1) Multiplication
+  let parts = norm.split(/\s+×\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += `<span class="mult">×</span><span class="qb">${esc(parts[i])}</span>`;
     }
-    return html;
+    return `<span class="expr-wrapper">${html}</span>`;
   }
 
-  // 2) Composés avec trait d'union (sans espaces)
-  const hyParts = norm.split(/-/);
-  if (hyParts.length > 1){
-    let html = `<span class="qb">${esc(hyParts[0])}</span>`;
-    for (let k = 1; k < hyParts.length; k++){
-      html += `<span class="hyph">-</span><span class="qb">${esc(hyParts[k])}</span>`;
+  // 2) Division
+  parts = norm.split(/\s+÷\s+/);
+  if (parts.length > 1){
+    let html = `<span class="qb">${esc(parts[0])}</span>`;
+    for (let i = 1; i < parts.length; i++){
+      html += `<span class="div">÷</span><span class="qb">${esc(parts[i])}</span>`;
     }
-    return html;
+    return `<span class="expr-wrapper">${html}</span>`;
   }
 
-  // 3) Texte simple
+  // 3) Trait d’union (sans espaces)
+  const hy = norm.split(/-/);
+  if (hy.length > 1){
+    let html = `<span class="qb">${esc(hy[0])}</span>`;
+    for (let i = 1; i < hy.length; i++){
+      html += `<span class="hyph">-</span><span class="qb">${esc(hy[i])}</span>`;
+    }
+    return `<span class="expr-wrapper">${html}</span>`;
+  }
+
+  // 4) Texte simple
   return `<span class="qb">${esc(norm)}</span>`;
 }
 
@@ -222,6 +235,7 @@ function fitToCircle(){
   const content = document.getElementById("content");
   if(!circle || !content) return;
 
+  // reset transform for measurement
   content.style.transform = "none";
   content.style.transformOrigin = "50% 50%";
 
@@ -229,22 +243,39 @@ function fitToCircle(){
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  const availW = Math.max(0, (circle.clientWidth - padX) * 0.88);
-  const availH = Math.max(0, (circle.clientHeight - padY) * 0.90);
+  const availW = Math.max(0, (circle.clientWidth - padX) * 0.92);
+  const availH = Math.max(0, (circle.clientHeight - padY) * 0.92);
 
-  const lines = content.querySelectorAll(".q-line1,.q-line2,.a-line1,.a-line2");
-  if(!lines.length) return;
+  // Mesure robuste : clone du contenu en "max-content" hors-écran
+  const clone = content.cloneNode(true);
+  clone.style.position = "absolute";
+  clone.style.visibility = "hidden";
+  clone.style.left = "-10000px";
+  clone.style.top = "0";
+  clone.style.width = "max-content";
+  clone.style.maxWidth = "none";
+  clone.style.whiteSpace = "nowrap";
+  clone.style.transform = "none";
+  document.body.appendChild(clone);
 
-  let neededW = 0;
-  lines.forEach(l => { neededW = Math.max(neededW, l.scrollWidth); });
-  const neededH = content.scrollHeight;
+  const rect = clone.getBoundingClientRect();
+  const neededW = Math.ceil(rect.width) + 6;   // marge kerning/arrondis iOS
+  const neededH = Math.ceil(rect.height) + 2;
+
+  document.body.removeChild(clone);
 
   let s = 1;
   if(neededW > 0) s = Math.min(s, availW / neededW);
   if(neededH > 0) s = Math.min(s, availH / neededH);
 
-  s = Math.max(0.30, Math.min(1, s)) * 0.99;
-  content.style.transform = `translateZ(0) scale(${s})`;
+  // Autorise un scale plus petit pour les très longues expressions
+  s = Math.max(0.25, Math.min(1, s)) * 0.99;
+
+  // Applique le scale tout en préservant le centrage horizontal parfait
+  content.style.transform = `translate(-50%, -50%) scale(${s})`;
+  content.style.position = "absolute";
+  content.style.left = "50%";
+  content.style.top = "50%";
 }
 
 function scheduleFit(){

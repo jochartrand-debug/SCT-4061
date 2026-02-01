@@ -468,26 +468,3 @@ body{
   display: inline-block;
   white-space: nowrap;
 }
-
-/* === FIX v20 : centrage fiable du contenu dans le cercle (sans position:absolute sur .content) ===
-   IMPORTANT: #content est transformé (scale) en JS. Donc .content ne doit PAS dépendre d'un transform translate(-50%,-50%).
-   On laisse le cercle (grid) centrer naturellement le contenu. */
-.content{
-  position: static !important;
-  left: auto !important;
-  top: auto !important;
-}
-
-/* Si #content avait été "display:none" par défaut, on garde ça; JS gère l'affichage.
-   Mais on s'assure que quand il est affiché, il se centre bien. */
-.circle{
-  place-items: center !important;
-}
-
-/* Garantie opérateurs non gras */
-.q-line1 .div, .a-line1 .div,
-.q-line1 .mult, .a-line1 .mult,
-.q-line1 .hyph, .a-line1 .hyph{
-  font-family: "InterRegular", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
-  font-weight: 400 !important;
-}
