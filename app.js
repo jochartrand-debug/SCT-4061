@@ -141,6 +141,38 @@ function nextIndex(){
   return state.i;
 }
 
+function setExpr(targetSpan, s){
+  // Remplit targetSpan avec du texte + spans .op pour les opérateurs, sans .replace() et sans HTML fragile.
+  if(!targetSpan) return;
+  const txt = (s ?? "").toString();
+  targetSpan.textContent = ""; // clear
+  const frag = document.createDocumentFragment();
+
+  // Buffer pour regrouper les caractères non-opérateurs
+  let buf = "";
+  const flush = () => {
+    if(buf){
+      frag.appendChild(document.createTextNode(buf));
+      buf = "";
+    }
+  };
+
+  for(let i=0; i<txt.length; i++){
+    const ch = txt[i];
+    if(ch === "×" || ch === "÷" || ch === "-"){
+      flush();
+      const sp = document.createElement("span");
+      sp.className = "op" + (ch === "-" ? " op-hyph" : "");
+      sp.textContent = ch;
+      frag.appendChild(sp);
+    }else{
+      buf += ch;
+    }
+  }
+  flush();
+  targetSpan.appendChild(frag);
+}
+
 function esc(s){
   return (s ?? "")
     .replaceAll("&","&amp;")
@@ -158,10 +190,10 @@ function render(){
   const item = DATA[state.i] || {};
 
   if (state.mode === "question") {
-    const q1 = esc(((item.q1 ?? "")).trim());
+    const q1 = ((item.q1 ?? "")).trim();
     const q2 = (item.q2 ?? "").trim();
     el.innerHTML = `
-      <div class="q-line1"><span class="line1-text">${q1}</span></div>
+      <div class="q-line1"><span class="line1-text"></span></div>
       ${q2 ? `<div class="q-line2">${esc(q2)}</div>` : ""}
     `;
     scheduleFit();
@@ -172,7 +204,7 @@ function render(){
   const a1 = esc(item.a1 ?? "");
   const a2 = (item.a2_html ?? "").trim();
   el.innerHTML = `
-    <div class="a-line1"><span class="line1-text">${a1}</span></div>
+    <div class="a-line1"><span class="line1-text"></span></div>
     ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
   `;
 }
@@ -192,25 +224,22 @@ function fitToCircle(){
   const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
   const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
 
-  // Plus conservateur: évite tout rognage iOS quand la ligne est longue
+  // Marge conservatrice pour éviter tout rognage sur iPhone
   const availW = Math.max(0, (circle.clientWidth - padX) * 0.84);
   const availH = Math.max(0, (circle.clientHeight - padY) * 0.90);
 
-  // Mesure sur la boîte "shrink-to-fit" (pas sur un bloc 100%)
-  const measureTargets = content.querySelectorAll(".line1-text, .q-line2, .a-line2");
-  if(!measureTargets.length) return;
+  const line1 = content.querySelector(".line1-text");
+  const line2 = content.querySelector(".q-line2, .a-line2");
 
-  let neededW = 0;
-  measureTargets.forEach(el => {
-    neededW = Math.max(neededW, el.scrollWidth);
-  });
-  const neededH = content.scrollHeight;
+  const w1 = line1 ? line1.scrollWidth : 0;
+  const w2 = line2 ? line2.scrollWidth : 0;
+  const neededW = Math.max(w1, w2, 1);
+  const neededH = Math.max(content.scrollHeight, 1);
 
   let s = 1;
-  if(neededW > 0) s = Math.min(s, availW / neededW);
-  if(neededH > 0) s = Math.min(s, availH / neededH);
+  s = Math.min(s, availW / neededW);
+  s = Math.min(s, availH / neededH);
 
-  // Autorise plus petit si nécessaire
   s = Math.max(0.25, Math.min(1, s)) * 0.99;
   content.style.transform = `translateZ(0) scale(${s})`;
 }
