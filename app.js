@@ -80,7 +80,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "Méga",
+    "q1": "Mega",
     "q2": "(M)",
     "a1_html": "10<sup>6</sup>",
     "a2_html": ""
@@ -283,15 +283,7 @@ function nextIndex(){
   state.pos += 1;
   if (state.pos >= state.order.length) {
     state.mode = "home";
-    
-// === Anti "rebondissement" iOS (rubber band) ===
-// L'app n'a pas de scroll : on bloque le scroll natif pour empêcher l'effet de rebond.
-// (nécessaire sur iOS, où overscroll-behavior n'est pas toujours respecté)
-document.addEventListener("touchmove", (e) => {
-  if (e.cancelable) e.preventDefault();
-}, { passive: false });
-
-render();
+    render();
     return null;
   }
   state.i = state.order[state.pos];
