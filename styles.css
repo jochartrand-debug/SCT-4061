@@ -1,4 +1,15 @@
 
+/* === Anti "rebondissement" (overscroll / rubber band) ===
+   - Android/desktop: overscroll-behavior stoppe l'effet
+   - iOS Safari/PWA: on bloque aussi le scroll via overflow:hidden (et JS touche)
+*/
+html, body{
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  overflow: hidden;
+}
+
+
 @font-face{
   font-family: "InterRegular";
   src: url("fonts/Inter-Regular.woff2") format("woff2");
