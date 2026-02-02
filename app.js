@@ -16,7 +16,7 @@ const DATA = [
 {
     "q1": "Identité",
     "q2": "d'un atome",
-    "a1": "Nombre (quantité)",
+    "a1": "Quantité",
     "a2": "de protons"
   },
 {
