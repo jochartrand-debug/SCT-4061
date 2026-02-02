@@ -16,13 +16,13 @@ const DATA = [
 {
     "q1": "3 600 coulombs",
     "q2": "(3 600 C)",
-    "a1": "1 Ampère-heure",
+    "a1": "1 ampère-heure",
     "a2": "(1 Ah)"
   },
 {
     "q1": "3 600 joules",
     "q2": "(3 600 J)",
-    "a1": "1 Watt-heure",
+    "a1": "1 watt-heure",
     "a2": "(1 Wh)"
   },
 {
@@ -382,15 +382,22 @@ function render(){
   // answer
   const a1 = item.a1 ?? "";
   const a1_html = (item.a1_html ?? "").trim();
-  const a2 = (item.a2_html ?? "").trim();
+
+  // a2 peut être fourni en texte (comme q2) ou en HTML (a2_html)
+  const a2_plain = (item.a2 ?? "").toString().trim();
+  const a2_html = (item.a2_html ?? "").trim();
 
   // Si a1_html est fourni, on l'utilise tel quel (HTML), pour permettre <sup>…</sup>, etc.
   // Sinon, on utilise le rendu standard (gras + opérateurs non gras + fractions empilées).
   const a1LineHTML = a1_html ? `<span class="qb a1html">${a1_html}</span>` : renderLine1HTML(a1);
 
+  // a2 : HTML prioritaire, sinon texte échappé
+  const a2LineHTML = a2_html ? a2_html : (a2_plain ? esc(a2_plain) : "");
+
+
   el.innerHTML = `
     <div class="a-line1">${a1LineHTML}</div>
-    ${a2 ? `<div class="a-line2">${a2}</div>` : ""}
+    ${a2LineHTML ? `<div class="a-line2">${a2LineHTML}</div>` : ""}
   `;
 }
 
