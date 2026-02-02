@@ -1,6 +1,11 @@
 /* =========================
-   POLICES
+   VISUEL "PROJET AIMÉ"
+   - fond gris derrière
+   - tuile centrée, pas plein écran
+   - coins arrondis visibles
    ========================= */
+
+/* Polices (inchangé) */
 @font-face{
   font-family: "InterRegular";
   src: url("fonts/Inter-Regular.woff2") format("woff2");
@@ -46,9 +51,6 @@
   font-display: swap;
 }
 
-/* =========================
-   LAYOUT (cadre gris visible)
-   ========================= */
 html{
   -webkit-text-size-adjust:100%;
   text-size-adjust:100%;
@@ -61,16 +63,18 @@ html, body{
 :root{
   --pad: 18px;
   --tile-radius: 18px;
+  --frame-bg: #0f0f10;
+  --tile-dark: #17181b;
 }
 
-/* Fond "gris" derrière les tuiles */
+/* IMPORTANT: force le "cadre gris" même si d'autres règles existent */
 body{
-  background: #0f0f10;
+  background: var(--frame-bg) !important;
   color: #fff;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-/* Centre la tuile et laisse voir le cadre gris */
+/* écran centré, avec air autour */
 .screen{
   min-height: 100vh;
   min-height: 100dvh;
@@ -84,58 +88,50 @@ body{
     calc(var(--pad) + env(safe-area-inset-left));
 
   box-sizing: border-box;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
+  background: var(--frame-bg) !important;
 }
 
-/* =========================
-   TUILE (PAS PLEIN ÉCRAN)
-   ========================= */
-.card{
-  width: min(92vw, 980px);
-  min-height: 70vh;
+/* ====== TUILE ======
+   On cible .card ET #card au cas où l'HTML n'a pas la classe.
+*/
+.card,
+#card{
+  width: min(92vw, 980px) !important;
+  min-height: 70vh !important;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 
-  padding: var(--pad);
-  border-radius: var(--tile-radius);
+  padding: var(--pad) !important;
+  border-radius: var(--tile-radius) !important;
+  overflow: hidden !important; /* coins arrondis visibles même avec image */
 
-  /* liseré discret pour mieux percevoir la tuile */
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset;
+  /* petit liseré interne pour "décoller" la tuile */
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
 }
 
-/* Question / Accueil : tuile sombre */
-.card.home,
-.card.question{
-  background: #17181b;
-  color: #ffffff;
+/* états (ton app.js met "home question answer" comme classe) */
+.card.home, #card.home,
+.card.question, #card.question{
+  background: var(--tile-dark) !important;
+  color: #fff !important;
+}
+.card.answer, #card.answer{
+  background: #fff !important;
+  color: #000 !important;
 }
 
-/* Réponse : tuile blanche */
-.card.answer{
-  background: #ffffff;
-  color: #000000;
-}
-
-/* =========================
-   CONTENU
-   ========================= */
-.content{
+/* Contenu */
+#content, .content{
   width: 100%;
   text-align: center;
-  line-height: 1.12;
-  letter-spacing: 0.2px;
   white-space: pre-line;
 }
 
-/* Questions: 2 lignes */
 .q-line1{
   display:block;
   width: 100%;
-  text-align: center;
   font-size: clamp(96px, min(18vw, 14svh), 180px);
   line-height: 1.0;
   margin-bottom: 0.10em;
@@ -143,23 +139,23 @@ body{
 .q-line2{
   display:block;
   width: 100%;
-  text-align: center;
   font-size: clamp(56px, min(10vw, 8svh), 96px);
   line-height: 1.1;
   opacity: 0.9;
+  font-weight: 400;
   margin-top: 0.02em;
   letter-spacing: 0.01em;
-  font-weight: 400;
 }
 
-/* Réponses: même taille que ligne 1 des questions */
-.card.answer .content{
+/* Réponses (comme ton projet aimé) */
+.card.answer .content,
+#card.answer .content{
   font-size: clamp(96px, 18vw, 180px);
   line-height: 1.05;
   font-weight: 750;
 }
 
-/* Gras / opérateurs (compat app.js) */
+/* compat rendu opérateurs */
 .qb{
   font-family: "InterExtraBold", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   font-weight: 800;
@@ -174,21 +170,17 @@ body{
   font-weight: 400 !important;
 }
 
-/* =========================
-   ACCUEIL
-   ========================= */
+/* Image accueil */
 .home-image{
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
-.card.home #content{ display:none; }
+.card.home #content, #card.home #content{ display:none; }
 .card.question .home-image,
 .card.answer .home-image{ display:none; }
 
-/* =========================
-   TRANSITION "dim pulse"
-   ========================= */
+/* Dim */
 body::before{
   content:"";
   position: fixed;
@@ -198,9 +190,7 @@ body::before{
   pointer-events: none;
   z-index: 5;
 }
-.flash-answer::before{
-  animation: dimPulse 140ms ease-out;
-}
+.flash-answer::before{ animation: dimPulse 140ms ease-out; }
 @keyframes dimPulse{
   0%{opacity:0;}
   40%{opacity:0.12;}
