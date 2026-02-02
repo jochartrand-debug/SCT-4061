@@ -172,26 +172,26 @@ const DATA = [
 {
     "q1": "m³/s",
     "q2": "",
-    "a1": "Débit volumique",
-    "a2_html": ""
+    "a1": "Débit",
+    "a2": "volumique"
   },
 {
     "q1": "J/s",
     "q2": "",
-    "a1": "Débit d'énergie",
-    "a2_html": ""
+    "a1": "Débit",
+    "a2": "d'énergie"
   },
 {
     "q1": "C/s",
     "q2": "",
-    "a1": "Débit de charge",
-    "a2_html": ""
+    "a1": "Débit",
+    "a2": "de charge"
   },
 {
     "q1": "kg/s",
     "q2": "",
-    "a1": "Débit massique",
-    "a2_html": ""
+    "a1": "Débit",
+    "a2": "massique"
   },
 {
     "q1": "Distance/Temps",
