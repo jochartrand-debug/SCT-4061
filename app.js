@@ -14,6 +14,24 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">F</span>)"
   },
 {
+    "q1": "3 600 coulombs",
+    "q2": "(3 600 C)",
+    "a1": "1 Ampère-heure",
+    "a2": "(1 Ah)"
+  },
+{
+    "q1": "3 600 joules",
+    "q2": "(3 600 J)",
+    "a1": "1 Watt-heure",
+    "a2": "(1 Wh)"
+  },
+{
+    "q1": "3 600 secondes",
+    "q2": "(3 600 s)",
+    "a1": "1 heure",
+    "a2": "(1 h)"
+  },
+{
     "q1": "kilo",
     "q2": "(k)",
     "a1_html": "10<sup>3</sup>",
