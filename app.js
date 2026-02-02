@@ -14,38 +14,38 @@ const DATA = [
     "a2_html": "(<span class=\"italic\">F</span>)"
   },
 {
-    "q1": "Identité d'un atome",
-    "q2": "",
+    "q1": "Identité",
+    "q2": "d'un atome",
     "a1": "# de protons",
     "a2": ""
   },
 {
-    "q1": "Grain d'électricité",
-    "q2": "",
+    "q1": "Grain",
+    "q2": "d'électricité",
     "a1": "Électron",
     "a2": ""
   },
 {
-    "q1": "Quantité d'électricité",
-    "q2": "",
+    "q1": "Quantité",
+    "q2": "d'électricité",
     "a1": "Charge",
     "a2": ""
   },
 {
-    "q1": "Quantité de matière",
-    "q2": "",
+    "q1": "Quantité",
+    "q2": "de matière",
     "a1": "Masse",
     "a2": ""
   },
 {
-    "q1": "Qualité particulière",
-    "q2": "",
+    "q1": "Qualité",
+    "q2": "particulière",
     "a1": "Charge",
     "a2": ""
   },
 {
-    "q1": "Qualité universelle",
-    "q2": "",
+    "q1": "Qualité",
+    "q2": "universelle",
     "a1": "Masse",
     "a2": ""
   },
