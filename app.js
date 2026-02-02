@@ -64,7 +64,7 @@ const DATA = [
 {
     "q1": "3 600 secondes",
     "q2": "(3 600 s)",
-    "a1": "1 heure",
+    "a1": "1  heure",
     "a2": "(1 h)"
   },
 {
