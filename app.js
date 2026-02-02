@@ -16,8 +16,8 @@ const DATA = [
 {
     "q1": "Identité",
     "q2": "d'un atome",
-    "a1": "# de protons",
-    "a2": ""
+    "a1": "Nombre (quantité)",
+    "a2": "de protons"
   },
 {
     "q1": "Grain",
