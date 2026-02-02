@@ -56,7 +56,9 @@
 }
 
 
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; 
+  background:#0f0f10;
+}
 
 :root{
   --question-circle-size: calc(min(78vmin, 640px)*1.2);
@@ -571,3 +573,24 @@ body{
 
 /* ===== a1_html: agrandit uniquement les réponses HTML (+10%) ===== */
 .a1html{ font-size: 1.25em; }
+
+/* ===== Override: dimensions/cohérence "cadre + zone grise" (comme le dernier CSS) ===== */
+body{ background:#0f0f10 !important; padding:0 !important; }
+.screen{ padding:0 !important; }
+
+/* Tuiles: même rendu que le dernier code (cadre plus petit sur fond gris) */
+.card{
+  width: min(92vw, 980px) !important;
+  min-height: 70vh !important;
+  border-radius: 18px !important;
+  padding: 18px !important;
+}
+.card.home,
+.card.question{
+  background:#17181b !important;
+  color:#fff !important;
+}
+.card.answer{
+  background:#fff !important;
+  color:#000 !important;
+}
