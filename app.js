@@ -80,7 +80,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "Mega",
+    "q1": "Méga",
     "q2": "(M)",
     "a1_html": "10<sup>6</sup>",
     "a2_html": ""
