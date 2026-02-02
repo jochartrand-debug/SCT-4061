@@ -1,17 +1,11 @@
-const CACHE = "intervalles-cache-v70";
-
-/* IMPORTANT:
-   - bump du cache => force la MAJ des fichiers
-   - skipWaiting/clientsClaim => prend effet immédiatement
-*/
+const CACHE = "intervalles-cache-v68";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
-  "./data.json",
-  "./assets/accueil.png",
+  "./data.json",  "./assets/accueil.png",
   "./favicon.ico",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -23,18 +17,14 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    Promise.all([
-      caches.keys().then(keys =>
-        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-      ),
-      self.clients.claim()
-    ])
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
   );
 });
 
