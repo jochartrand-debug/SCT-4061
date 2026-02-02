@@ -52,13 +52,13 @@ const DATA = [
 {
     "q1": "3 600 coulombs",
     "q2": "(3 600 C)",
-    "a1": "1 ampère-heure",
+    "a1": "1  ampère-heure",
     "a2": "(1 Ah)"
   },
 {
     "q1": "3 600 joules",
     "q2": "(3 600 J)",
-    "a1": "1 watt-heure",
+    "a1": "1  watt-heure",
     "a2": "(1 Wh)"
   },
 {
