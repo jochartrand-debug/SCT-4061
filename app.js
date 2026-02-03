@@ -1,10 +1,4 @@
 let tapLocked = false;
-// === Anti "rebondissement" iOS (rubber band) ===
-// L'app n'a pas de scroll : on bloque le scroll natif pour empêcher l'effet de rebond.
-// (nécessaire sur iOS, où overscroll-behavior n'est pas toujours respecté)
-document.addEventListener("touchmove", (e) => {
-  if (e.cancelable) e.preventDefault();
-}, { passive: false });
 
 // Unités de mesure — Q/R
 // - Questions au hasard (deck) ; épuisement ; retour accueil
@@ -289,7 +283,15 @@ function nextIndex(){
   state.pos += 1;
   if (state.pos >= state.order.length) {
     state.mode = "home";
-    render();
+    
+// === Anti "rebondissement" iOS (rubber band) ===
+// L'app n'a pas de scroll : on bloque le scroll natif pour empêcher l'effet de rebond.
+// (nécessaire sur iOS, où overscroll-behavior n'est pas toujours respecté)
+document.addEventListener("touchmove", (e) => {
+  if (e.cancelable) e.preventDefault();
+}, { passive: false });
+
+render();
     return null;
   }
   state.i = state.order[state.pos];

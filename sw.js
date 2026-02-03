@@ -1,4 +1,4 @@
-const CACHE = "intervalles-cache-v70";
+const CACHE = "intervalles-cache-v69";
 const ASSETS = [
   "./",
   "./index.html",
@@ -17,18 +17,14 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    Promise.all([
-caches.keys().then(keys =>
+    caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ),
-      self.clients.claim()
-    ])
+    )
   );
 });
 
