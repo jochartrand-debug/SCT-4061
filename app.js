@@ -1,4 +1,10 @@
 let tapLocked = false;
+// === Anti "rebondissement" iOS (rubber band) ===
+// L'app n'a pas de scroll : on bloque le scroll natif pour empêcher l'effet de rebond.
+// (nécessaire sur iOS, où overscroll-behavior n'est pas toujours respecté)
+document.addEventListener("touchmove", (e) => {
+  if (e.cancelable) e.preventDefault();
+}, { passive: false });
 
 // Unités de mesure — Q/R
 // - Questions au hasard (deck) ; épuisement ; retour accueil
@@ -80,7 +86,7 @@ const DATA = [
     "a2_html": ""
   },
 {
-    "q1": "Mega",
+    "q1": "Méga",
     "q2": "(M)",
     "a1_html": "10<sup>6</sup>",
     "a2_html": ""
