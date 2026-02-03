@@ -484,7 +484,7 @@ function fitLine1Only(){
 
   // Largeur max "safe" dans un cercle: on prend une corde ~0.78*diamètre (marge)
   const d = getQuestionCircleDiameterPx();
-  const maxW = Math.max(1, d * 0.78);
+  const maxW = Math.max(1, d * 0.68);
 
   // Certains textes sont en nowrap; on s'assure de mesurer la largeur réelle
   // (scrollWidth marche bien même si display:flex).
