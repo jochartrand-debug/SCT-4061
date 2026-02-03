@@ -318,8 +318,34 @@ function fitLine1ToRing(){
   if (!(r > 0)) return;
 
   // Test: la ligne 1 doit tenir dans le cercle à 3 hauteurs (haut/milieu/bas)
+  const getUnionRect = (root) => {
+    // Union des rectangles des descendants (spans, etc.) pour mesurer le vrai texte,
+    // même si le conteneur a une largeur imposée.
+    const nodes = root.querySelectorAll("*");
+    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+
+    if (!nodes.length){
+      return root.getBoundingClientRect();
+    }
+
+    nodes.forEach(n => {
+      const r = n.getBoundingClientRect();
+      if (!r.width && !r.height) return;
+      left = Math.min(left, r.left);
+      top = Math.min(top, r.top);
+      right = Math.max(right, r.right);
+      bottom = Math.max(bottom, r.bottom);
+    });
+
+    if (left === Infinity){
+      return root.getBoundingClientRect();
+    }
+
+    return { left, top, right, bottom, width: right - left, height: bottom - top };
+  };
+
   const fits = () => {
-    const rect = line1.getBoundingClientRect();
+    const rect = getUnionRect(line1);
 
     // demi-largeur (autour du centre)
     const halfW = Math.max(Math.abs(rect.left - cx), Math.abs(rect.right - cx));
