@@ -503,7 +503,7 @@ function line1FitsInCircle(lineRect, metrics){
   const ys = [lineRect.top + 1, (lineRect.top + lineRect.bottom) / 2, lineRect.bottom - 1];
 
   // Marge de sécurité (antialiasing + différences de rendu)
-  const SAFETY = 0.94;
+  const SAFETY = 0.88;
 
   for (const y of ys){
     const dy = y - cy;
