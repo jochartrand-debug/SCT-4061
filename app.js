@@ -450,13 +450,10 @@ function render(){
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
 // Objectif: ne JAMAIS toucher à la ligne 2. On ajuste uniquement la taille de police de la ligne 1
-// (q-line1 / a-line1) pour que le contenu reste visuellement "dans" le cercle décoratif.
-// Important iOS: on mesure après rendu (double rAF) + après chargement des polices (fonts.ready).
+// (q-line1 / a-line1) pour que l'ensemble (ligne 1 + ligne 2) reste visuellement dans le cercle décoratif.
+// IMPORTANT: le cercle de question est un pseudo-élément CSS (.card.question::before). On mesure sa taille réelle.
 
 function getQuestionCircleDiameterPx(){
-  // Le cercle de question est dessiné via .card.question::before dans le CSS.
-  // Sur certains navigateurs, le pseudo-élément peut ne pas exister (ex: si la règle est retirée).
-  // Dans ce cas on retombe sur la largeur du conteneur.
   try{
     const cs = getComputedStyle(card, "::before");
     const w = parseFloat(cs.width || "0");
@@ -464,11 +461,9 @@ function getQuestionCircleDiameterPx(){
     const d = Math.max(w, h);
     if (d && isFinite(d)) return d;
   }catch(_){}
-  // fallback: largeur utile de la carte
+  // fallback si le pseudo-élément n'existe pas
   return Math.min(card.clientWidth || 0, card.clientHeight || 0) || (window.innerWidth || 0);
 }
-
-function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
 function fitLine1Only(){
   if (state.mode === "home") return;
@@ -476,31 +471,35 @@ function fitLine1Only(){
   const line1 = el.querySelector(".q-line1, .a-line1");
   if (!line1) return;
 
-  // Ne pas toucher à la ligne 2: aucun style appliqué sur .q-line2/.a-line2 ici.
-
-  // Remet la taille CSS d'origine avant de mesurer
+  // On remet la taille CSS d'origine avant de mesurer
   line1.style.fontSize = "";
   line1.style.letterSpacing = "";
 
-  // Largeur max "safe" dans un cercle: on prend une corde ~0.78*diamètre (marge)
   const d = getQuestionCircleDiameterPx();
-  const maxW = Math.max(1, d * 0.68);
+  const r = d / 2;
 
-  // Certains textes sont en nowrap; on s'assure de mesurer la largeur réelle
-  // (scrollWidth marche bien même si display:flex).
-  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
-  let lo = 18;                           // taille minimale acceptable
-  let hi = startPx;                      // taille de départ
-  let best = hi;
+  // Hauteur totale du contenu (ligne 1 + ligne 2) — on ne modifie pas la ligne 2,
+  // mais elle "consomme" de la hauteur, donc réduit la largeur disponible dans un cercle.
+  const contentH = el.scrollHeight;
 
-  // Si ça rentre déjà, terminé.
+  // y = demi-hauteur occupée (bornée au rayon)
+  const y = Math.min(contentH / 2, r - 2);
+
+  // Largeur max géométrique (corde) au niveau de cette hauteur (marge de sécurité 0.96)
+  const maxW = 2 * Math.sqrt(Math.max(0, r*r - y*y)) * 0.96;
+
+  // Si ça rentre déjà, terminé
   if (line1.scrollWidth <= maxW) return;
 
-  // Recherche binaire pour trouver la plus grande taille qui rentre.
+  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
+  let lo = 18;          // taille minimale acceptable
+  let hi = startPx;     // taille de départ
+  let best = hi;
+
+  // Recherche binaire: plus grande taille qui rentre
   for (let iter = 0; iter < 14; iter++){
     const mid = (lo + hi) / 2;
     line1.style.fontSize = mid.toFixed(2) + "px";
-    // petite marge de sécurité pour les variations de rendu iOS
     if (line1.scrollWidth <= (maxW - 1)){
       best = mid;
       lo = mid;
@@ -511,8 +510,7 @@ function fitLine1Only(){
 
   line1.style.fontSize = best.toFixed(2) + "px";
 
-  // Optionnel: si on est tombé très bas, on compacte légèrement les espaces (sans affecter ligne 2).
-  // (utile pour "volt × ampère", etc.)
+  // Micro-compactage si on est rendu très petit (sans toucher à la ligne 2)
   if (best <= 24){
     line1.style.letterSpacing = "-0.02em";
   }
@@ -528,10 +526,10 @@ function scheduleFit(){
     fitLine1Only();
   };
 
-  // iOS/WebKit: 2 frames = DOM + layout stabilisés (polices/metrics)
+  // iOS/WebKit: 2 frames = DOM + layout stabilisés
   requestAnimationFrame(() => requestAnimationFrame(run));
 
-  // Après chargement des polices (si supporté)
+  // Après chargement des polices
   if (document.fonts && document.fonts.ready){
     document.fonts.ready.then(() => {
       requestAnimationFrame(() => requestAnimationFrame(run));
@@ -543,7 +541,6 @@ function scheduleFit(){
 window.addEventListener("resize", () => {
   if (state.mode !== "home") scheduleFit();
 }, { passive: true });
-
 
 
 async function handleTap(){
