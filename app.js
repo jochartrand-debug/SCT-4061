@@ -300,10 +300,16 @@ function fitLine1ToRing(){
   line1.style.fontSize = "";
   line1.style.letterSpacing = "";
 
+  // IMPORTANT: #content est clip-path (masque) en CSS.
+  // Si on mesure le texte alors qu'il est clippé, le navigateur peut retourner des rects "coupés",
+  // ce qui fait croire que ça rentre alors que non. On désactive temporairement le clip pendant le fit.
+  const prevClip = el.style.clipPath;
+  el.style.clipPath = "none";
+
   // Le fitting est utile surtout en mode question (cercle), mais on peut aussi l'appliquer en réponse
   // si tu souhaites garder une cohérence visuelle.
   const ring = document.getElementById(RING_ID);
-  if (!ring || ring.style.display === "none") return;
+  if (!ring || ring.style.display === "none") { el.style.clipPath = prevClip; return; }
 
   const ringRect = ring.getBoundingClientRect();
   const cx = ringRect.left + ringRect.width / 2;
@@ -315,7 +321,7 @@ function fitLine1ToRing(){
   const safe = parseFloat(styles.getPropertyValue("--q-circle-safe")) || 12;
   const r = (Math.min(ringRect.width, ringRect.height) / 2) - stroke - safe;
 
-  if (!(r > 0)) return;
+  if (!(r > 0)) { el.style.clipPath = prevClip; return; }
 
   // Test: la ligne 1 doit tenir dans le cercle à 3 hauteurs (haut/milieu/bas)
   const getUnionRect = (root) => {
@@ -367,7 +373,7 @@ function fitLine1ToRing(){
     return true;
   };
 
-  if (fits()) return;
+  if (fits()) { el.style.clipPath = prevClip; return; }
 
   const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
   let lo = 10, hi = startPx, best = lo;
@@ -394,6 +400,8 @@ function fitLine1ToRing(){
   }
 
   if (guard <= 24) line1.style.letterSpacing = "-0.02em";
+
+  el.style.clipPath = prevClip;
 }
 
 let __fitScheduled = false;
