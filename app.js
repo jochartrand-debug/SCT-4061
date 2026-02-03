@@ -319,23 +319,25 @@ function fitLine1ToRing(){
 
   // Test: la ligne 1 doit tenir dans le cercle à 3 hauteurs (haut/milieu/bas)
   const getUnionRect = (root) => {
-    // Union des rectangles des descendants (spans, etc.) pour mesurer le vrai texte,
-    // même si le conteneur a une largeur imposée.
-    const nodes = root.querySelectorAll("*");
-    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+    // Mesure fiable de la "vraie" boîte du texte rendu (inclut les noeuds texte),
+    // via Range.getClientRects() (fonctionne sur desktop + iOS).
+    const range = document.createRange();
+    range.selectNodeContents(root);
 
-    if (!nodes.length){
+    const rects = Array.from(range.getClientRects());
+    // Fallback: si aucun rect (élément vide), on prend le rect du conteneur
+    if (!rects.length){
       return root.getBoundingClientRect();
     }
 
-    nodes.forEach(n => {
-      const r = n.getBoundingClientRect();
-      if (!r.width && !r.height) return;
+    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+    for (const r of rects){
+      if (!r.width && !r.height) continue;
       left = Math.min(left, r.left);
       top = Math.min(top, r.top);
       right = Math.max(right, r.right);
       bottom = Math.max(bottom, r.bottom);
-    });
+    }
 
     if (left === Infinity){
       return root.getBoundingClientRect();
