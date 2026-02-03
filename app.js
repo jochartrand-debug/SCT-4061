@@ -289,118 +289,95 @@ function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 // On ajuste UNIQUEMENT la ligne 1 pour qu'elle tienne dans le cercle intérieur sûr.
 // La ligne 2 n'est jamais modifiée.
 function fitLine1ToRing(){
-  showQuestionRing(state.mode === "question");
-
   if (state.mode === "home") return;
 
   const line1 = el.querySelector(".q-line1, .a-line1");
   if (!line1) return;
 
-  // Reset styles
+  // Reset styles (ligne 2 jamais touchée)
   line1.style.fontSize = "";
   line1.style.letterSpacing = "";
 
-  // IMPORTANT: #content est clip-path (masque) en CSS.
-  // Si on mesure le texte alors qu'il est clippé, le navigateur peut retourner des rects "coupés",
-  // ce qui fait croire que ça rentre alors que non. On désactive temporairement le clip pendant le fit.
+  const ring = document.getElementById(RING_ID);
+  if (!ring || ring.style.display === "none") return;
+
+  // IMPORTANT: on mesure SANS clip-path (sinon les mesures peuvent être "coupées").
   const prevClip = el.style.clipPath;
   el.style.clipPath = "none";
-
-  // Le fitting est utile surtout en mode question (cercle), mais on peut aussi l'appliquer en réponse
-  // si tu souhaites garder une cohérence visuelle.
-  const ring = document.getElementById(RING_ID);
-  if (!ring || ring.style.display === "none") { el.style.clipPath = prevClip; return; }
 
   const ringRect = ring.getBoundingClientRect();
   const cx = ringRect.left + ringRect.width / 2;
   const cy = ringRect.top  + ringRect.height / 2;
 
-  // Rayon intérieur "sûr" = demi-diamètre - stroke - safe padding (cohérent avec le CSS clip-path)
   const styles = getComputedStyle(document.documentElement);
   const stroke = parseFloat(styles.getPropertyValue("--q-circle-stroke")) || 6;
   const safe = parseFloat(styles.getPropertyValue("--q-circle-safe")) || 12;
+
   const r = (Math.min(ringRect.width, ringRect.height) / 2) - stroke - safe;
-
-  if (!(r > 0)) { el.style.clipPath = prevClip; return; }
-
-  // Test: la ligne 1 doit tenir dans le cercle à 3 hauteurs (haut/milieu/bas)
-  const getUnionRect = (root) => {
-    // Mesure fiable de la "vraie" boîte du texte rendu (inclut les noeuds texte),
-    // via Range.getClientRects() (fonctionne sur desktop + iOS).
-    const range = document.createRange();
-    range.selectNodeContents(root);
-
-    const rects = Array.from(range.getClientRects());
-    // Fallback: si aucun rect (élément vide), on prend le rect du conteneur
-    if (!rects.length){
-      return root.getBoundingClientRect();
-    }
-
-    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
-    for (const r of rects){
-      if (!r.width && !r.height) continue;
-      left = Math.min(left, r.left);
-      top = Math.min(top, r.top);
-      right = Math.max(right, r.right);
-      bottom = Math.max(bottom, r.bottom);
-    }
-
-    if (left === Infinity){
-      return root.getBoundingClientRect();
-    }
-
-    return { left, top, right, bottom, width: right - left, height: bottom - top };
-  };
-
-  const fits = () => {
-    const rect = getUnionRect(line1);
-
-    // demi-largeur (autour du centre)
-    const halfW = Math.max(Math.abs(rect.left - cx), Math.abs(rect.right - cx));
-
-    // 3 hauteurs de test
-    const ys = [rect.top + 1, (rect.top + rect.bottom)/2, rect.bottom - 1];
-
-    // Marge anti-aliasing
-    const SAFETY = 0.78;
-
-    for (const y of ys){
-      const dy = y - cy;
-      if (Math.abs(dy) >= r) return false;
-      const allowed = Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
-      if (halfW > allowed) return false;
-    }
-    return true;
-  };
-
-  if (fits()) { el.style.clipPath = prevClip; return; }
-
-  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
-  let lo = 10, hi = startPx, best = lo;
-
-  for (let iter = 0; iter < 14; iter++){
-    const mid = (lo + hi) / 2;
-    line1.style.fontSize = mid.toFixed(2) + "px";
-    if (fits()){
-      best = mid;
-      lo = mid;
-    }else{
-      hi = mid;
-    }
+  if (!(r > 0)){
+    el.style.clipPath = prevClip;
+    return;
   }
 
-  line1.style.fontSize = best.toFixed(2) + "px";
+  // Mesure "OR" : on clone la ligne 1 hors-écran pour mesurer sa vraie largeur,
+  // indépendamment de la largeur du conteneur / flex / etc.
+  const measureWidth = () => {
+    const box = document.createElement("div");
+    box.style.position = "fixed";
+    box.style.left = "-10000px";
+    box.style.top = "-10000px";
+    box.style.visibility = "hidden";
+    box.style.whiteSpace = "nowrap";
+    box.style.pointerEvents = "none";
+    box.style.zIndex = "-1";
 
-  // Garantie anti-clipping: si ça ne fit pas encore (différences sub-pixel), on descend par petits pas.
-  // (Toujours sans toucher à la ligne 2.)
-  let guard = best;
-  while (!fits() && guard > 8){
-    guard -= 0.5;
-    line1.style.fontSize = guard.toFixed(2) + "px";
+    const clone = line1.cloneNode(true);
+    // on évite que le clone hérite de contraintes de layout
+    clone.style.width = "auto";
+    clone.style.maxWidth = "none";
+    clone.style.whiteSpace = "nowrap";
+
+    box.appendChild(clone);
+    document.body.appendChild(box);
+
+    const w = clone.getBoundingClientRect().width;
+
+    document.body.removeChild(box);
+    return w;
+  };
+
+  const getDy = () => {
+    const rect = line1.getBoundingClientRect();
+    const midY = (rect.top + rect.bottom) / 2;
+    return midY - cy;
+  };
+
+  // Ajustement itératif (3 passes) : la taille change -> dy/largeur changent légèrement.
+  const SAFETY = 0.90; // marge optique (anti-aliasing + différences moteur)
+  const minPx = 10;
+
+  for (let pass = 0; pass < 3; pass++){
+    const dy = getDy();
+    if (Math.abs(dy) >= r) break;
+
+    const allowed = 2 * Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
+    const w = measureWidth();
+
+    if (!w || w <= 0) break;
+
+    if (w <= allowed) break;
+
+    const current = parseFloat(getComputedStyle(line1).fontSize || "0") || 0;
+    if (!current) break;
+
+    const next = Math.max(minPx, current * (allowed / w));
+    line1.style.fontSize = next.toFixed(2) + "px";
+
+    // Petit resserrement si on est rendu très petit
+    if (next <= 24) line1.style.letterSpacing = "-0.02em";
   }
 
-  if (guard <= 24) line1.style.letterSpacing = "-0.02em";
-
+  // Restaure le clip (airbag anti-débordement)
   el.style.clipPath = prevClip;
 }
 
