@@ -251,6 +251,141 @@ const DATA = [
 const card = document.getElementById("card");
 const el = document.getElementById("content");
 
+// ===== SVG ring (question) + auto-fit (ligne 1 seulement) =====
+const RING_ID = "qring-svg";
+
+// Crée (une fois) le cercle SVG décoratif, centré dans .card
+function ensureQuestionRing(){
+  let svg = document.getElementById(RING_ID);
+  if (svg) return svg;
+
+  svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("id", RING_ID);
+  svg.setAttribute("class", "qring");
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("cx", "50");
+  c.setAttribute("cy", "50");
+  // r = 50 - stroke/2 en coordonnées viewBox ; le stroke est en CSS avec vector-effect
+  c.setAttribute("r", "49");
+  svg.appendChild(c);
+
+  // On le met dans la carte, derrière le contenu
+  card.style.position = card.style.position || "relative";
+  card.insertBefore(svg, card.firstChild);
+  return svg;
+}
+
+function showQuestionRing(show){
+  const svg = ensureQuestionRing();
+  svg.style.display = show ? "block" : "none";
+}
+
+// Utilitaires
+function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+// On ajuste UNIQUEMENT la ligne 1 pour qu'elle tienne dans le cercle intérieur sûr.
+// La ligne 2 n'est jamais modifiée.
+function fitLine1ToRing(){
+  showQuestionRing(state.mode === "question");
+
+  if (state.mode === "home") return;
+
+  const line1 = el.querySelector(".q-line1, .a-line1");
+  if (!line1) return;
+
+  // Reset styles
+  line1.style.fontSize = "";
+  line1.style.letterSpacing = "";
+
+  // Le fitting est utile surtout en mode question (cercle), mais on peut aussi l'appliquer en réponse
+  // si tu souhaites garder une cohérence visuelle.
+  const ring = document.getElementById(RING_ID);
+  if (!ring || ring.style.display === "none") return;
+
+  const ringRect = ring.getBoundingClientRect();
+  const cx = ringRect.left + ringRect.width / 2;
+  const cy = ringRect.top  + ringRect.height / 2;
+
+  // Rayon intérieur "sûr" = demi-diamètre - stroke - safe padding (cohérent avec le CSS clip-path)
+  const styles = getComputedStyle(document.documentElement);
+  const stroke = parseFloat(styles.getPropertyValue("--q-circle-stroke")) || 6;
+  const safe = parseFloat(styles.getPropertyValue("--q-circle-safe")) || 12;
+  const r = (Math.min(ringRect.width, ringRect.height) / 2) - stroke - safe;
+
+  if (!(r > 0)) return;
+
+  // Test: la ligne 1 doit tenir dans le cercle à 3 hauteurs (haut/milieu/bas)
+  const fits = () => {
+    const rect = line1.getBoundingClientRect();
+
+    // demi-largeur (autour du centre)
+    const halfW = Math.max(Math.abs(rect.left - cx), Math.abs(rect.right - cx));
+
+    // 3 hauteurs de test
+    const ys = [rect.top + 1, (rect.top + rect.bottom)/2, rect.bottom - 1];
+
+    // Marge anti-aliasing
+    const SAFETY = 0.92;
+
+    for (const y of ys){
+      const dy = y - cy;
+      if (Math.abs(dy) >= r) return false;
+      const allowed = Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
+      if (halfW > allowed) return false;
+    }
+    return true;
+  };
+
+  if (fits()) return;
+
+  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
+  let lo = 18, hi = startPx, best = lo;
+
+  for (let iter = 0; iter < 14; iter++){
+    const mid = (lo + hi) / 2;
+    line1.style.fontSize = mid.toFixed(2) + "px";
+    if (fits()){
+      best = mid;
+      lo = mid;
+    }else{
+      hi = mid;
+    }
+  }
+
+  line1.style.fontSize = best.toFixed(2) + "px";
+  if (best <= 24) line1.style.letterSpacing = "-0.02em";
+}
+
+let __fitScheduled = false;
+function scheduleFit(){
+  if (__fitScheduled) return;
+  __fitScheduled = true;
+
+  const run = () => {
+    __fitScheduled = false;
+    fitLine1ToRing();
+  };
+
+  // Double rAF: DOM + layout + polices
+  requestAnimationFrame(() => requestAnimationFrame(run));
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(() => {
+      requestAnimationFrame(() => requestAnimationFrame(run));
+    }).catch(() => {});
+  }
+}
+
+ensureQuestionRing();
+showQuestionRing(false);
+
+window.addEventListener("resize", () => {
+  if (state.mode !== "home") scheduleFit();
+}, { passive: true });
+
+
 const state = {
   mode: "home", // "home" | "question" | "answer"
   order: [],
@@ -449,140 +584,6 @@ function render(){
 
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
-// Objectif: ne JAMAIS toucher à la ligne 2. On ajuste uniquement la taille de police de la ligne 1
-// (q-line1 / a-line1) pour que la ligne 1 reste à l'intérieur du cercle DÉCORATIF,
-// en tenant compte de la position réelle (centrage typographique, ligne 2 qui pousse, etc.).
-// Approche: on mesure le rectangle réel de la ligne 1 et on vérifie qu'il tient dans le cercle
-// (corde) aux hauteurs top/mid/bottom. Ça marche sur iOS et desktop.
-
-function getCircleMetrics(){
-  // Le cercle est dessiné via .card.question::before (positionné au centre de .card).
-  // On récupère son diamètre intérieur (enlevant le trait) + le centre.
-  const cardRect = card.getBoundingClientRect();
-  let d = 0;
-  let bw = 0;
-
-  try{
-    const cs = getComputedStyle(card, "::before");
-    const w = parseFloat(cs.width || "0");
-    const h = parseFloat(cs.height || "0");
-    d = Math.max(w, h);
-    bw = parseFloat(cs.borderLeftWidth || cs.borderWidth || "0") || 0;
-  }catch(_){}
-
-  if (!d || !isFinite(d)){
-    // fallback si le pseudo-élément n'existe pas: on prend le conteneur .circle
-    const circle = document.querySelector(".circle");
-    const cr = circle ? circle.getBoundingClientRect() : cardRect;
-    d = Math.min(cr.width, cr.height);
-    bw = 0;
-  }
-
-  const innerD = Math.max(0, d - 2*bw);
-  const r = innerD / 2;
-
-  return {
-    r,
-    cx: cardRect.left + cardRect.width / 2,
-    cy: cardRect.top  + cardRect.height / 2
-  };
-}
-
-function line1FitsInCircle(lineRect, metrics){
-  const r = metrics.r;
-  const cx = metrics.cx;
-  const cy = metrics.cy;
-
-  // si r est nul, on ne fait rien
-  if (!r || !isFinite(r)) return true;
-
-  // demi-largeur réelle de la ligne 1 autour du centre
-  const halfW = Math.max(Math.abs(lineRect.left - cx), Math.abs(lineRect.right - cx));
-
-  // On teste la corde à 3 hauteurs (haut/milieu/bas) pour être robuste
-  const ys = [lineRect.top + 1, (lineRect.top + lineRect.bottom) / 2, lineRect.bottom - 1];
-
-  // Marge de sécurité (antialiasing + différences de rendu)
-  const SAFETY = 0.88;
-
-  for (const y of ys){
-    const dy = y - cy;
-    // si hors du cercle verticalement, échec
-    if (Math.abs(dy) >= r) return false;
-    const allowedHalfW = Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
-    if (halfW > allowedHalfW) return false;
-  }
-  return true;
-}
-
-function fitLine1Only(){
-  if (state.mode === "home") return;
-
-  const line1 = el.querySelector(".q-line1, .a-line1");
-  if (!line1) return;
-
-  // Jamais toucher à la ligne 2: on n'applique aucun style à .q-line2/.a-line2.
-  line1.style.fontSize = "";
-  line1.style.letterSpacing = "";
-
-  const metrics = getCircleMetrics();
-
-  // Si ça fit déjà, terminé
-  let rect = line1.getBoundingClientRect();
-  if (line1FitsInCircle(rect, metrics)) return;
-
-  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
-
-  let lo = 18;
-  let hi = startPx;
-  let best = lo;
-
-  // Recherche binaire: plus grande taille qui fit
-  for (let iter = 0; iter < 14; iter++){
-    const mid = (lo + hi) / 2;
-    line1.style.fontSize = mid.toFixed(2) + "px";
-    rect = line1.getBoundingClientRect();
-
-    if (line1FitsInCircle(rect, metrics)){
-      best = mid;
-      lo = mid;
-    }else{
-      hi = mid;
-    }
-  }
-
-  line1.style.fontSize = best.toFixed(2) + "px";
-
-  // Micro-compactage si on est rendu très petit (sans toucher à la ligne 2)
-  if (best <= 24){
-    line1.style.letterSpacing = "-0.02em";
-  }
-}
-
-let __fitScheduled = false;
-function scheduleFit(){
-  if (__fitScheduled) return;
-  __fitScheduled = true;
-
-  const run = () => {
-    __fitScheduled = false;
-    fitLine1Only();
-  };
-
-  // iOS/WebKit: 2 frames = DOM + layout stabilisés
-  requestAnimationFrame(() => requestAnimationFrame(run));
-
-  // Après chargement des polices
-  if (document.fonts && document.fonts.ready){
-    document.fonts.ready.then(() => {
-      requestAnimationFrame(() => requestAnimationFrame(run));
-    }).catch(() => {});
-  }
-}
-
-window.addEventListener("resize", () => {
-  if (state.mode !== "home") scheduleFit();
-}, { passive: true });
 
 
 async function handleTap(){
