@@ -450,22 +450,69 @@ function render(){
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
 // Objectif: ne JAMAIS toucher à la ligne 2. On ajuste uniquement la taille de police de la ligne 1
-// (q-line1 / a-line1) pour que l'ensemble (ligne 1 + ligne 2) reste visuellement dans le cercle décoratif.
-// IMPORTANT: le cercle de question est un pseudo-élément CSS (.card.question::before). On mesure sa taille réelle.
+// (q-line1 / a-line1) pour que la ligne 1 reste à l'intérieur du cercle DÉCORATIF,
+// en tenant compte de la position réelle (centrage typographique, ligne 2 qui pousse, etc.).
+// Approche: on mesure le rectangle réel de la ligne 1 et on vérifie qu'il tient dans le cercle
+// (corde) aux hauteurs top/mid/bottom. Ça marche sur iOS et desktop.
 
-function getQuestionCircleInnerDiameterPx(){
-  // Diamètre UTILISABLE à l'intérieur du trait du cercle (on enlève l'épaisseur de bordure).
+function getCircleMetrics(){
+  // Le cercle est dessiné via .card.question::before (positionné au centre de .card).
+  // On récupère son diamètre intérieur (enlevant le trait) + le centre.
+  const cardRect = card.getBoundingClientRect();
+  let d = 0;
+  let bw = 0;
+
   try{
     const cs = getComputedStyle(card, "::before");
     const w = parseFloat(cs.width || "0");
     const h = parseFloat(cs.height || "0");
-    const d = Math.max(w, h);
-    const bw = parseFloat(cs.borderLeftWidth || cs.borderWidth || "0") || 0;
-    const inner = d - 2*bw; // enlève le trait (gauche + droite)
-    if (inner && isFinite(inner)) return Math.max(0, inner);
+    d = Math.max(w, h);
+    bw = parseFloat(cs.borderLeftWidth || cs.borderWidth || "0") || 0;
   }catch(_){}
-  // fallback si le pseudo-élément n'existe pas
-  return Math.min(card.clientWidth || 0, card.clientHeight || 0) || (window.innerWidth || 0);
+
+  if (!d || !isFinite(d)){
+    // fallback si le pseudo-élément n'existe pas: on prend le conteneur .circle
+    const circle = document.querySelector(".circle");
+    const cr = circle ? circle.getBoundingClientRect() : cardRect;
+    d = Math.min(cr.width, cr.height);
+    bw = 0;
+  }
+
+  const innerD = Math.max(0, d - 2*bw);
+  const r = innerD / 2;
+
+  return {
+    r,
+    cx: cardRect.left + cardRect.width / 2,
+    cy: cardRect.top  + cardRect.height / 2
+  };
+}
+
+function line1FitsInCircle(lineRect, metrics){
+  const r = metrics.r;
+  const cx = metrics.cx;
+  const cy = metrics.cy;
+
+  // si r est nul, on ne fait rien
+  if (!r || !isFinite(r)) return true;
+
+  // demi-largeur réelle de la ligne 1 autour du centre
+  const halfW = Math.max(Math.abs(lineRect.left - cx), Math.abs(lineRect.right - cx));
+
+  // On teste la corde à 3 hauteurs (haut/milieu/bas) pour être robuste
+  const ys = [lineRect.top + 1, (lineRect.top + lineRect.bottom) / 2, lineRect.bottom - 1];
+
+  // Marge de sécurité (antialiasing + différences de rendu)
+  const SAFETY = 0.94;
+
+  for (const y of ys){
+    const dy = y - cy;
+    // si hors du cercle verticalement, échec
+    if (Math.abs(dy) >= r) return false;
+    const allowedHalfW = Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
+    if (halfW > allowedHalfW) return false;
+  }
+  return true;
 }
 
 function fitLine1Only(){
@@ -474,41 +521,29 @@ function fitLine1Only(){
   const line1 = el.querySelector(".q-line1, .a-line1");
   if (!line1) return;
 
-  // On remet la taille CSS d'origine avant de mesurer
+  // Jamais toucher à la ligne 2: on n'applique aucun style à .q-line2/.a-line2.
   line1.style.fontSize = "";
   line1.style.letterSpacing = "";
 
-  const d = getQuestionCircleInnerDiameterPx();
-  const r = d / 2;
+  const metrics = getCircleMetrics();
 
-  // Hauteur totale du contenu (ligne 1 + ligne 2) — on ne modifie pas la ligne 2,
-  // mais elle "consomme" de la hauteur, donc réduit la largeur disponible dans un cercle.
-  const rect = el.getBoundingClientRect();
-  const contentH = rect.height;
-
-  // Compensation typographique: le centre visuel du texte (baseline/glyphes) est souvent plus haut
-  // que le centre géométrique. On réserve un peu plus de rayon "en haut" pour éviter tout débordement.
-  const opticalShift = contentH * 0.12;
-
-  // y = demi-hauteur réellement occupée dans le cercle (bornée au rayon)
-  const y = Math.min((contentH / 2) + opticalShift, r - 2);
-
-  // Largeur max géométrique (corde) au niveau de cette hauteur (marge de sécurité 0.96)
-  const maxW = 2 * Math.sqrt(Math.max(0, r*r - y*y)) * 0.92;
-
-  // Si ça rentre déjà, terminé
-  if (line1.scrollWidth <= maxW) return;
+  // Si ça fit déjà, terminé
+  let rect = line1.getBoundingClientRect();
+  if (line1FitsInCircle(rect, metrics)) return;
 
   const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
-  let lo = 18;          // taille minimale acceptable
-  let hi = startPx;     // taille de départ
-  let best = hi;
 
-  // Recherche binaire: plus grande taille qui rentre
+  let lo = 18;
+  let hi = startPx;
+  let best = lo;
+
+  // Recherche binaire: plus grande taille qui fit
   for (let iter = 0; iter < 14; iter++){
     const mid = (lo + hi) / 2;
     line1.style.fontSize = mid.toFixed(2) + "px";
-    if (line1.scrollWidth <= (maxW - 1)){
+    rect = line1.getBoundingClientRect();
+
+    if (line1FitsInCircle(rect, metrics)){
       best = mid;
       lo = mid;
     }else{
@@ -545,7 +580,6 @@ function scheduleFit(){
   }
 }
 
-// Re-fit sur rotation / changement de viewport
 window.addEventListener("resize", () => {
   if (state.mode !== "home") scheduleFit();
 }, { passive: true });
