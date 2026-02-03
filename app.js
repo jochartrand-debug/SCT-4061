@@ -448,92 +448,105 @@ function render(){
 
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
+// Objectif: empêcher tout débordement (iOS "Texte plus grand", polices différentes, etc.)
+// Stratégie: on ajuste d'abord la taille de la ligne 1, puis la ligne 2 si nécessaire.
+// (On évite de scaler tout le bloc trop tôt, sinon la 2e ligne devient "radicalement" plus petite.)
 
+function _getCircleSizePx(){
+  // Dans ton CSS actuel, le cercle des QUESTIONS est un pseudo-élément ::before sur .card.question
+  // On peut lire sa taille via getComputedStyle(card, '::before').
+  try{
+    const cs = getComputedStyle(card, "::before");
+    const w = parseFloat(cs.width) || 0;
+    const h = parseFloat(cs.height) || 0;
+    const s = Math.min(w, h);
+    if (s > 0) return s;
+  }catch(_){}
 
+  // Fallback: si jamais le pseudo n'existe pas, on prend .circle
+  const c = document.querySelector(".circle");
+  if (c && c.clientWidth) return c.clientWidth;
 
-let __fitRAF = 0;
-
-function __getQuestionCircleDiameterPx(){
-  // CSS :root { --question-circle-size: calc(min(78vmin, 640px)*1.2); }
-  // getComputedStyle renvoie une valeur calculée en px (sur iOS aussi).
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue("--question-circle-size")
-    .trim();
-
-  const v = parseFloat(raw);
-  if (Number.isFinite(v) && v > 0) return v;
-
-  // Fallback (au cas où la variable n'existe pas)
+  // Dernier recours
   return Math.min(window.innerWidth, window.innerHeight) * 0.9;
 }
 
-function __fitContentInQuestionCircle(){
-  if (state.mode === "home") return;
-
-  const content = document.getElementById("content");
-  if (!content) return;
-
-  const line1 = content.querySelector(state.mode === "question" ? ".q-line1" : ".a-line1");
-  if (!line1) return;
-
-  const line2 = content.querySelector(state.mode === "question" ? ".q-line2" : ".a-line2");
-
-  // Diamètre du cercle décoratif (question) — on l'utilise comme contrainte de taille
-  const D = __getQuestionCircleDiameterPx();
-
-  // Bordure cercle = 6px (x2) + marge de sécurité (padding visuel)
-  const border = 12;
-  const safe = 24; // marge pour éviter de "toucher" le cercle
-  const maxW = Math.max(0, D - border - safe);
-  const maxH = Math.max(0, D - border - safe);
-
-  // Init tailles courantes (on part des tailles calculées)
-  let fs1 = parseFloat(getComputedStyle(line1).fontSize) || 0;
-  let fs2 = line2 ? (parseFloat(getComputedStyle(line2).fontSize) || 0) : 0;
-
-  // Boucle de shrink : on réduit proportionnellement jusqu'à ce que ça rentre
-  for (let k = 0; k < 40; k++){
-    const r = content.getBoundingClientRect();
-    if (r.width <= maxW && r.height <= maxH) break;
-
-    const rw = maxW / Math.max(1, r.width);
-    const rh = maxH / Math.max(1, r.height);
-    const ratio = Math.min(rw, rh, 0.97); // 0.97 = évite oscillation
-
-    fs1 = Math.max(28, fs1 * ratio);
-    line1.style.fontSize = `${fs1}px`;
-
-    if (line2){
-      fs2 = Math.max(18, fs2 * ratio);
-      line2.style.fontSize = `${fs2}px`;
-    }
-  }
+function _measureOverflow(targetW, targetH){
+  // Mesure du bloc #content (après layout)
+  const r = el.getBoundingClientRect();
+  return (r.width > targetW) || (r.height > targetH);
 }
 
 function scheduleFit(){
-  if (__fitRAF) cancelAnimationFrame(__fitRAF);
+  if (state.mode === "home") return;
 
-  // Double RAF : laisse le temps au DOM + layout de se stabiliser (crucial sur iOS)
-  __fitRAF = requestAnimationFrame(() => {
+  // On attend 2 frames: important sur iOS (fonts/layout peuvent se stabiliser après le premier paint)
+  requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      __fitContentInQuestionCircle();
+      const circleSize = _getCircleSizePx();
+      // Marge de sécurité: bordure + padding + tolérance iOS
+      const pad = 34; // px (safe)
+      const targetW = Math.max(0, circleSize - pad * 2);
+      const targetH = Math.max(0, circleSize - pad * 2);
+
+      // Reset: on retire tout inline (sinon l'ajustement s'empile)
+      el.style.transform = "";
+      const l1 = el.querySelector(".q-line1, .a-line1");
+      const l2 = el.querySelector(".q-line2, .a-line2");
+      if (l1){ l1.style.fontSize = ""; }
+      if (l2){ l2.style.fontSize = ""; }
+
+      // Mesure des tailles de base (après reset)
+      const base1 = l1 ? parseFloat(getComputedStyle(l1).fontSize) : 0;
+      const base2 = l2 ? parseFloat(getComputedStyle(l2).fontSize) : 0;
+
+      // 1) Réduire ligne 1 d'abord
+      let fs1 = base1;
+      const min1 = 28;      // ne descend pas trop
+      const step1 = 0.94;   // -6%
+      let guard = 0;
+
+      while (_measureOverflow(targetW, targetH) && l1 && fs1 > min1 && guard < 60){
+        fs1 = Math.max(min1, fs1 * step1);
+        l1.style.fontSize = fs1.toFixed(2) + "px";
+        guard++;
+      }
+
+      // 2) Si ça déborde encore, réduire ligne 2 (doucement)
+      if (_measureOverflow(targetW, targetH) && l2){
+        let fs2 = base2;
+        const min2 = 18;
+        const step2 = 0.95; // -5%
+        let guard2 = 0;
+
+        while (_measureOverflow(targetW, targetH) && fs2 > min2 && guard2 < 60){
+          fs2 = Math.max(min2, fs2 * step2);
+          l2.style.fontSize = fs2.toFixed(2) + "px";
+          guard2++;
+        }
+      }
+
+      // 3) Ultime secours: scale très léger si ça déborde encore (cas extrêmes)
+      if (_measureOverflow(targetW, targetH)){
+        let scale = 1;
+        let g = 0;
+        while (_measureOverflow(targetW, targetH) && scale > 0.82 && g < 30){
+          scale -= 0.01;
+          el.style.transform = `scale(${scale.toFixed(2)})`;
+          g++;
+        }
+      }
     });
   });
-
-  // Quand les polices finissent de charger, les métriques changent → on refit
-  if (document.fonts && document.fonts.status !== "loaded"){
-    document.fonts.ready.then(() => {
-      // Ne relance pas en boucle : on refit juste après chargement
-      __fitContentInQuestionCircle();
-    }).catch(() => {});
-  }
 }
 
-// Refit sur rotation / changement viewport
-window.addEventListener("resize", () => {
-  if (state.mode !== "home") scheduleFit();
-}, { passive: true });
+// Refit après chargement des polices (sinon iOS peut recalculer et déborder après coup)
+if (document.fonts && document.fonts.ready){
+  document.fonts.ready.then(() => scheduleFit()).catch(() => {});
+}
 
+// Refit en rotation / resize
+window.addEventListener("resize", () => scheduleFit(), { passive: true });
 
 async function handleTap(){
   if (tapLocked) return;
