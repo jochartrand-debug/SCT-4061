@@ -116,7 +116,7 @@ body{
   padding-bottom: 36px;
   padding-left: 18px;
   position: relative;
-  margin-top: -5vh; /* compensation finale */
+  margin-top: -10vh; /* compensation finale */
 
   -webkit-tap-highlight-color: transparent;
 
