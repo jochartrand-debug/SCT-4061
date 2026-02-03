@@ -373,7 +373,16 @@ function fitLine1ToRing(){
     return true;
   };
 
-  if (fits()) { el.style.clipPath = prevClip; return; }
+  if (fits()) {
+    // Marge visuelle minimale: même si ça "fit" au pixel près, on retire ~1px
+    // pour éviter les cas limites (desktop/iOS/Android + anti-aliasing).
+    const current = parseFloat(getComputedStyle(line1).fontSize || "0") || 0;
+    if (current > 0){
+      line1.style.fontSize = (current - 1).toFixed(2) + "px";
+    }
+    el.style.clipPath = prevClip;
+    return;
+  }
 
   const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
   let lo = 10, hi = startPx, best = lo;
