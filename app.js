@@ -453,13 +453,16 @@ function render(){
 // (q-line1 / a-line1) pour que l'ensemble (ligne 1 + ligne 2) reste visuellement dans le cercle décoratif.
 // IMPORTANT: le cercle de question est un pseudo-élément CSS (.card.question::before). On mesure sa taille réelle.
 
-function getQuestionCircleDiameterPx(){
+function getQuestionCircleInnerDiameterPx(){
+  // Diamètre UTILISABLE à l'intérieur du trait du cercle (on enlève l'épaisseur de bordure).
   try{
     const cs = getComputedStyle(card, "::before");
     const w = parseFloat(cs.width || "0");
     const h = parseFloat(cs.height || "0");
     const d = Math.max(w, h);
-    if (d && isFinite(d)) return d;
+    const bw = parseFloat(cs.borderLeftWidth || cs.borderWidth || "0") || 0;
+    const inner = d - 2*bw; // enlève le trait (gauche + droite)
+    if (inner && isFinite(inner)) return Math.max(0, inner);
   }catch(_){}
   // fallback si le pseudo-élément n'existe pas
   return Math.min(card.clientWidth || 0, card.clientHeight || 0) || (window.innerWidth || 0);
@@ -475,18 +478,18 @@ function fitLine1Only(){
   line1.style.fontSize = "";
   line1.style.letterSpacing = "";
 
-  const d = getQuestionCircleDiameterPx();
+  const d = getQuestionCircleInnerDiameterPx();
   const r = d / 2;
 
   // Hauteur totale du contenu (ligne 1 + ligne 2) — on ne modifie pas la ligne 2,
   // mais elle "consomme" de la hauteur, donc réduit la largeur disponible dans un cercle.
-  const contentH = el.scrollHeight;
+  const contentH = el.scrollHeight + 8;
 
   // y = demi-hauteur occupée (bornée au rayon)
   const y = Math.min(contentH / 2, r - 2);
 
   // Largeur max géométrique (corde) au niveau de cette hauteur (marge de sécurité 0.96)
-  const maxW = 2 * Math.sqrt(Math.max(0, r*r - y*y)) * 0.96;
+  const maxW = 2 * Math.sqrt(Math.max(0, r*r - y*y)) * 0.92;
 
   // Si ça rentre déjà, terminé
   if (line1.scrollWidth <= maxW) return;
