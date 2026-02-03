@@ -354,7 +354,7 @@ function fitLine1ToRing(){
     const ys = [rect.top + 1, (rect.top + rect.bottom)/2, rect.bottom - 1];
 
     // Marge anti-aliasing
-    const SAFETY = 0.92;
+    const SAFETY = 0.85;
 
     for (const y of ys){
       const dy = y - cy;
@@ -368,7 +368,7 @@ function fitLine1ToRing(){
   if (fits()) return;
 
   const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
-  let lo = 18, hi = startPx, best = lo;
+  let lo = 10, hi = startPx, best = lo;
 
   for (let iter = 0; iter < 14; iter++){
     const mid = (lo + hi) / 2;
@@ -382,7 +382,16 @@ function fitLine1ToRing(){
   }
 
   line1.style.fontSize = best.toFixed(2) + "px";
-  if (best <= 24) line1.style.letterSpacing = "-0.02em";
+
+  // Garantie anti-clipping: si ça ne fit pas encore (différences sub-pixel), on descend par petits pas.
+  // (Toujours sans toucher à la ligne 2.)
+  let guard = best;
+  while (!fits() && guard > 8){
+    guard -= 0.5;
+    line1.style.fontSize = guard.toFixed(2) + "px";
+  }
+
+  if (guard <= 24) line1.style.letterSpacing = "-0.02em";
 }
 
 let __fitScheduled = false;
