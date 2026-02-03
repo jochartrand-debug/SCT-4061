@@ -597,7 +597,7 @@ body{
 :root{
   --q-circle-size: var(--question-circle-size);
   --q-circle-stroke: 6px;
-  --q-circle-safe: 12px; /* marge intérieure (évite que les glyphes touchent le trait) */
+  --q-circle-safe: 20px; /* marge intérieure (évite que les glyphes touchent le trait) */
 }
 
 /* Désactive l'ancien cercle décoratif en ::before (on utilise le SVG à la place) */
