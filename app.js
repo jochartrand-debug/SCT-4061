@@ -444,109 +444,107 @@ function render(){
     ${a2LineHTML ? `<div class="a-line2">${a2LineHTML}</div>` : ""}
   `;
   scheduleFit();
+  return;
 }
 
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
-// Objectif: empêcher tout débordement (iOS "Texte plus grand", polices différentes, etc.)
-// Stratégie: on ajuste d'abord la taille de la ligne 1, puis la ligne 2 si nécessaire.
-// (On évite de scaler tout le bloc trop tôt, sinon la 2e ligne devient "radicalement" plus petite.)
+// Objectif: ne JAMAIS toucher à la ligne 2. On ajuste uniquement la taille de police de la ligne 1
+// (q-line1 / a-line1) pour que le contenu reste visuellement "dans" le cercle décoratif.
+// Important iOS: on mesure après rendu (double rAF) + après chargement des polices (fonts.ready).
 
-function _getCircleSizePx(){
-  // Dans ton CSS actuel, le cercle des QUESTIONS est un pseudo-élément ::before sur .card.question
-  // On peut lire sa taille via getComputedStyle(card, '::before').
+function getQuestionCircleDiameterPx(){
+  // Le cercle de question est dessiné via .card.question::before dans le CSS.
+  // Sur certains navigateurs, le pseudo-élément peut ne pas exister (ex: si la règle est retirée).
+  // Dans ce cas on retombe sur la largeur du conteneur.
   try{
     const cs = getComputedStyle(card, "::before");
-    const w = parseFloat(cs.width) || 0;
-    const h = parseFloat(cs.height) || 0;
-    const s = Math.min(w, h);
-    if (s > 0) return s;
+    const w = parseFloat(cs.width || "0");
+    const h = parseFloat(cs.height || "0");
+    const d = Math.max(w, h);
+    if (d && isFinite(d)) return d;
   }catch(_){}
-
-  // Fallback: si jamais le pseudo n'existe pas, on prend .circle
-  const c = document.querySelector(".circle");
-  if (c && c.clientWidth) return c.clientWidth;
-
-  // Dernier recours
-  return Math.min(window.innerWidth, window.innerHeight) * 0.9;
+  // fallback: largeur utile de la carte
+  return Math.min(card.clientWidth || 0, card.clientHeight || 0) || (window.innerWidth || 0);
 }
 
-function _measureOverflow(targetW, targetH){
-  // Mesure du bloc #content (après layout)
-  const r = el.getBoundingClientRect();
-  return (r.width > targetW) || (r.height > targetH);
-}
+function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
-function scheduleFit(){
+function fitLine1Only(){
   if (state.mode === "home") return;
 
-  // On attend 2 frames: important sur iOS (fonts/layout peuvent se stabiliser après le premier paint)
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const circleSize = _getCircleSizePx();
-      // Marge de sécurité: bordure + padding + tolérance iOS
-      const pad = 34; // px (safe)
-      const targetW = Math.max(0, circleSize - pad * 2);
-      const targetH = Math.max(0, circleSize - pad * 2);
+  const line1 = el.querySelector(".q-line1, .a-line1");
+  if (!line1) return;
 
-      // Reset: on retire tout inline (sinon l'ajustement s'empile)
-      el.style.transform = "";
-      const l1 = el.querySelector(".q-line1, .a-line1");
-      const l2 = el.querySelector(".q-line2, .a-line2");
-      if (l1){ l1.style.fontSize = ""; }
-      if (l2){ l2.style.fontSize = ""; }
+  // Ne pas toucher à la ligne 2: aucun style appliqué sur .q-line2/.a-line2 ici.
 
-      // Mesure des tailles de base (après reset)
-      const base1 = l1 ? parseFloat(getComputedStyle(l1).fontSize) : 0;
-      const base2 = l2 ? parseFloat(getComputedStyle(l2).fontSize) : 0;
+  // Remet la taille CSS d'origine avant de mesurer
+  line1.style.fontSize = "";
+  line1.style.letterSpacing = "";
 
-      // 1) Réduire ligne 1 d'abord
-      let fs1 = base1;
-      const min1 = 28;      // ne descend pas trop
-      const step1 = 0.94;   // -6%
-      let guard = 0;
+  // Largeur max "safe" dans un cercle: on prend une corde ~0.78*diamètre (marge)
+  const d = getQuestionCircleDiameterPx();
+  const maxW = Math.max(1, d * 0.78);
 
-      while (_measureOverflow(targetW, targetH) && l1 && fs1 > min1 && guard < 60){
-        fs1 = Math.max(min1, fs1 * step1);
-        l1.style.fontSize = fs1.toFixed(2) + "px";
-        guard++;
-      }
+  // Certains textes sont en nowrap; on s'assure de mesurer la largeur réelle
+  // (scrollWidth marche bien même si display:flex).
+  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
+  let lo = 18;                           // taille minimale acceptable
+  let hi = startPx;                      // taille de départ
+  let best = hi;
 
-      // 2) Si ça déborde encore, réduire ligne 2 (doucement)
-      if (_measureOverflow(targetW, targetH) && l2){
-        let fs2 = base2;
-        const min2 = 18;
-        const step2 = 0.95; // -5%
-        let guard2 = 0;
+  // Si ça rentre déjà, terminé.
+  if (line1.scrollWidth <= maxW) return;
 
-        while (_measureOverflow(targetW, targetH) && fs2 > min2 && guard2 < 60){
-          fs2 = Math.max(min2, fs2 * step2);
-          l2.style.fontSize = fs2.toFixed(2) + "px";
-          guard2++;
-        }
-      }
+  // Recherche binaire pour trouver la plus grande taille qui rentre.
+  for (let iter = 0; iter < 14; iter++){
+    const mid = (lo + hi) / 2;
+    line1.style.fontSize = mid.toFixed(2) + "px";
+    // petite marge de sécurité pour les variations de rendu iOS
+    if (line1.scrollWidth <= (maxW - 1)){
+      best = mid;
+      lo = mid;
+    }else{
+      hi = mid;
+    }
+  }
 
-      // 3) Ultime secours: scale très léger si ça déborde encore (cas extrêmes)
-      if (_measureOverflow(targetW, targetH)){
-        let scale = 1;
-        let g = 0;
-        while (_measureOverflow(targetW, targetH) && scale > 0.82 && g < 30){
-          scale -= 0.01;
-          el.style.transform = `scale(${scale.toFixed(2)})`;
-          g++;
-        }
-      }
-    });
-  });
+  line1.style.fontSize = best.toFixed(2) + "px";
+
+  // Optionnel: si on est tombé très bas, on compacte légèrement les espaces (sans affecter ligne 2).
+  // (utile pour "volt × ampère", etc.)
+  if (best <= 24){
+    line1.style.letterSpacing = "-0.02em";
+  }
 }
 
-// Refit après chargement des polices (sinon iOS peut recalculer et déborder après coup)
-if (document.fonts && document.fonts.ready){
-  document.fonts.ready.then(() => scheduleFit()).catch(() => {});
+let __fitScheduled = false;
+function scheduleFit(){
+  if (__fitScheduled) return;
+  __fitScheduled = true;
+
+  const run = () => {
+    __fitScheduled = false;
+    fitLine1Only();
+  };
+
+  // iOS/WebKit: 2 frames = DOM + layout stabilisés (polices/metrics)
+  requestAnimationFrame(() => requestAnimationFrame(run));
+
+  // Après chargement des polices (si supporté)
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(() => {
+      requestAnimationFrame(() => requestAnimationFrame(run));
+    }).catch(() => {});
+  }
 }
 
-// Refit en rotation / resize
-window.addEventListener("resize", () => scheduleFit(), { passive: true });
+// Re-fit sur rotation / changement de viewport
+window.addEventListener("resize", () => {
+  if (state.mode !== "home") scheduleFit();
+}, { passive: true });
+
+
 
 async function handleTap(){
   if (tapLocked) return;
