@@ -483,10 +483,15 @@ function fitLine1Only(){
 
   // Hauteur totale du contenu (ligne 1 + ligne 2) — on ne modifie pas la ligne 2,
   // mais elle "consomme" de la hauteur, donc réduit la largeur disponible dans un cercle.
-  const contentH = el.scrollHeight + 8;
+  const rect = el.getBoundingClientRect();
+  const contentH = rect.height;
 
-  // y = demi-hauteur occupée (bornée au rayon)
-  const y = Math.min(contentH / 2, r - 2);
+  // Compensation typographique: le centre visuel du texte (baseline/glyphes) est souvent plus haut
+  // que le centre géométrique. On réserve un peu plus de rayon "en haut" pour éviter tout débordement.
+  const opticalShift = contentH * 0.12;
+
+  // y = demi-hauteur réellement occupée dans le cercle (bornée au rayon)
+  const y = Math.min((contentH / 2) + opticalShift, r - 2);
 
   // Largeur max géométrique (corde) au niveau de cette hauteur (marge de sécurité 0.96)
   const maxW = 2 * Math.sqrt(Math.max(0, r*r - y*y)) * 0.92;
