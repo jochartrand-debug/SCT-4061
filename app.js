@@ -443,10 +443,96 @@ function render(){
     <div class="a-line1">${a1LineHTML}</div>
     ${a2LineHTML ? `<div class="a-line2">${a2LineHTML}</div>` : ""}
   `;
+  scheduleFit();
 }
 
 
 // ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
+
+
+
+let __fitRAF = 0;
+
+function __getQuestionCircleDiameterPx(){
+  // CSS :root { --question-circle-size: calc(min(78vmin, 640px)*1.2); }
+  // getComputedStyle renvoie une valeur calculée en px (sur iOS aussi).
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--question-circle-size")
+    .trim();
+
+  const v = parseFloat(raw);
+  if (Number.isFinite(v) && v > 0) return v;
+
+  // Fallback (au cas où la variable n'existe pas)
+  return Math.min(window.innerWidth, window.innerHeight) * 0.9;
+}
+
+function __fitContentInQuestionCircle(){
+  if (state.mode === "home") return;
+
+  const content = document.getElementById("content");
+  if (!content) return;
+
+  const line1 = content.querySelector(state.mode === "question" ? ".q-line1" : ".a-line1");
+  if (!line1) return;
+
+  const line2 = content.querySelector(state.mode === "question" ? ".q-line2" : ".a-line2");
+
+  // Diamètre du cercle décoratif (question) — on l'utilise comme contrainte de taille
+  const D = __getQuestionCircleDiameterPx();
+
+  // Bordure cercle = 6px (x2) + marge de sécurité (padding visuel)
+  const border = 12;
+  const safe = 24; // marge pour éviter de "toucher" le cercle
+  const maxW = Math.max(0, D - border - safe);
+  const maxH = Math.max(0, D - border - safe);
+
+  // Init tailles courantes (on part des tailles calculées)
+  let fs1 = parseFloat(getComputedStyle(line1).fontSize) || 0;
+  let fs2 = line2 ? (parseFloat(getComputedStyle(line2).fontSize) || 0) : 0;
+
+  // Boucle de shrink : on réduit proportionnellement jusqu'à ce que ça rentre
+  for (let k = 0; k < 40; k++){
+    const r = content.getBoundingClientRect();
+    if (r.width <= maxW && r.height <= maxH) break;
+
+    const rw = maxW / Math.max(1, r.width);
+    const rh = maxH / Math.max(1, r.height);
+    const ratio = Math.min(rw, rh, 0.97); // 0.97 = évite oscillation
+
+    fs1 = Math.max(28, fs1 * ratio);
+    line1.style.fontSize = `${fs1}px`;
+
+    if (line2){
+      fs2 = Math.max(18, fs2 * ratio);
+      line2.style.fontSize = `${fs2}px`;
+    }
+  }
+}
+
+function scheduleFit(){
+  if (__fitRAF) cancelAnimationFrame(__fitRAF);
+
+  // Double RAF : laisse le temps au DOM + layout de se stabiliser (crucial sur iOS)
+  __fitRAF = requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      __fitContentInQuestionCircle();
+    });
+  });
+
+  // Quand les polices finissent de charger, les métriques changent → on refit
+  if (document.fonts && document.fonts.status !== "loaded"){
+    document.fonts.ready.then(() => {
+      // Ne relance pas en boucle : on refit juste après chargement
+      __fitContentInQuestionCircle();
+    }).catch(() => {});
+  }
+}
+
+// Refit sur rotation / changement viewport
+window.addEventListener("resize", () => {
+  if (state.mode !== "home") scheduleFit();
+}, { passive: true });
 
 
 async function handleTap(){
