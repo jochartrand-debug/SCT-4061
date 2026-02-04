@@ -634,5 +634,5 @@ body{
 .card.question #content{ will-change: transform; }
 
 :root{
-  --q-circle-safe: 50px;
+  --q-circle-safe: 16px;
 }
