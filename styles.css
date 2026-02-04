@@ -132,7 +132,7 @@ body{
   border-radius: 50%;
   display: grid;
   place-items: center;
-  overflow: hidden;
+  overflow: visible;
   padding: 2.5%;
 }
 
@@ -142,7 +142,7 @@ body{
 }
 .card.home .circle,
 .card.answer .circle{
-  border: 6px solid #fff;
+  border: none;
 }
 
 /* Cache le texte sur l'accueil */
@@ -167,8 +167,6 @@ body{
   font-size: clamp(64px, 10vw, 140px);
   font-weight: 750;
   line-height: 1.12;
-  white-space: nowrap;
-  text-wrap: nowrap;
 }
 
 .q-line2, .a-line2{
@@ -176,8 +174,6 @@ body{
   font-size: clamp(40px, 6vw, 80px);
   opacity: 0.9;
   line-height: 1.1;
-
-  padding-bottom: 0.25em; /* évite de couper g,y,p,q */
 }
 
 .italic{ font-style: italic; }
@@ -591,9 +587,13 @@ body{
 /* ===== a1_html: agrandit uniquement les réponses HTML (+10%) ===== */
 .a1html{ font-size: 1.25em; }
 
-.q-line2, .a-line2 {
-  display: inline-block;
-  line-height: 1.1;
-  padding-bottom: 0.08em;
+/* === PATCH anti-débordement (ligne 1) + anti-coupe descendantes (ligne 2) === */
+.q-line1, .a-line1{
+  white-space: nowrap;
+  text-wrap: nowrap;
 }
 
+.q-line2, .a-line2{
+  line-height: 1.18;
+  padding-bottom: 0.22em; /* évite que le bas des g/y/p/q soit coupé */
+}

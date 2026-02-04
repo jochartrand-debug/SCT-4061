@@ -32,45 +32,15 @@ const DATA = [
     "a2": ""
   },
 {
-    "q1": "Constitue",
-    "q2": "la matière",
-    "a1": "Atomes",
+    "q1": "Quantité",
+    "q2": "de matière",
+    "a1": "Masse",
     "a2": ""
   },
 {
-    "q1": "Constitue",
-    "q2": "les atomes",
-    "a1": "Particules",
-    "a2": ""
-  },
-{
-    "q1": "Noyau",
-    "q2": "atomique",
-    "a1": "Proton +",
-    "a2": "Neutrons"
-  },
-{
-    "q1": "Déplacement",
-    "q2": "d'électron",
-    "a1": "Électricité",
-    "a2": ""
-  },
-{
-    "q1": "Particule",
-    "q2": "négative",
-    "a1": "Électron",
-    "a2": ""
-  },
-{
-    "q1": "Particule",
-    "q2": "positive",
-    "a1": "Proton",
-    "a2": ""
-  },
-{
-    "q1": "Particule",
-    "q2": "neutre",
-    "a1": "Neutron",
+    "q1": "Qualité",
+    "q2": "particulière",
+    "a1": "Charge",
     "a2": ""
   },
 {
@@ -80,20 +50,20 @@ const DATA = [
     "a2": ""
   },
 {
-    "q1": "3 600",
-    "q2": "coulombs",
+    "q1": "3 600 coulombs",
+    "q2": "(3 600 C)",
     "a1": "1  ampère-heure",
     "a2": "(1 Ah)"
   },
 {
-    "q1": "3 600",
-    "q2": "joules",
+    "q1": "3 600 joules",
+    "q2": "(3 600 J)",
     "a1": "1  watt-heure",
     "a2": "(1 Wh)"
   },
 {
-    "q1": "3 600",
-    "q2": "secondes",
+    "q1": "3 600 secondes",
+    "q2": "(3 600 s)",
     "a1": "1  heure",
     "a2": "(1 h)"
   },
@@ -278,119 +248,6 @@ const DATA = [
   }
 ];
 
-
-// =============================
-// Auto-fit ligne 1 dans un cercle (robuste PC/iOS/Android)
-// - Mesure réelle du texte rendu
-// - Calcule la largeur disponible (corde du cercle) à la hauteur de la ligne 1
-// - Ne touche jamais à la ligne 2
-// =============================
-function fitLine1ToCircle(){
-  const card = document.querySelector(".card.question, .card.answer");
-  if (!card) return;
-
-  const circle = card.querySelector(".circle");
-  const line1 = card.querySelector(".q-line1, .a-line1");
-  if (!circle || !line1) return;
-
-  // Force une seule ligne (pas de wrap)
-  const prevWS = line1.style.whiteSpace;
-  line1.style.whiteSpace = "nowrap";
-
-  // Reset (on repart de la taille CSS)
-  const prevSize = line1.style.fontSize;
-  const prevLS = line1.style.letterSpacing;
-  line1.style.fontSize = "";
-  line1.style.letterSpacing = "";
-
-  // Lire la géométrie
-  const cRect = circle.getBoundingClientRect();
-  if (!cRect.width || !cRect.height){
-    line1.style.whiteSpace = "nowrap";
-    return;
-  }
-
-  const cs = getComputedStyle(circle);
-  const border = parseFloat(cs.borderLeftWidth) || 0;
-  const padL = parseFloat(cs.paddingLeft) || 0;
-  const padR = parseFloat(cs.paddingRight) || 0;
-
-  // Rayon utile (on enlève border + padding)
-  const r = (Math.min(cRect.width, cRect.height) / 2) - border - Math.max(padL, padR);
-  if (!(r > 0)){
-    line1.style.whiteSpace = "nowrap";
-    return;
-  }
-
-  const cx = cRect.left + cRect.width / 2;
-  const cy = cRect.top + cRect.height / 2;
-
-  // dy = distance verticale entre le centre du cercle et le milieu de la ligne 1
-  const lRect0 = line1.getBoundingClientRect();
-  const midY = (lRect0.top + lRect0.bottom) / 2;
-  const dy = midY - cy;
-
-  // Largeur dispo = corde du cercle à cette hauteur (avec marge de sécurité)
-  const SAFETY = 0.70; // plus petit = plus de marge (réduit davantage la taille si nécessaire)
-  if (Math.abs(dy) >= r){
-    line1.style.whiteSpace = "nowrap";
-    return;
-  }
-  const allowed = 2 * Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
-
-  // Mesure réelle du texte
-  const measureWidth = () => line1.getBoundingClientRect().width;
-
-  // Taille courante (px) selon CSS
-  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 0;
-  if (!startPx){
-    line1.style.whiteSpace = "nowrap";
-    return;
-  }
-
-  // Si ça rentre déjà, on sort (avec une mini marge visuelle optionnelle)
-  // (On évite les effets "pire" : on ne fait rien si c'est déjà OK.)
-  if (measureWidth() <= allowed){
-    line1.style.whiteSpace = "nowrap";
-    return;
-  }
-
-  // Binary search sur la font-size
-  let lo = 10, hi = startPx, best = lo;
-  for (let i = 0; i < 16; i++){
-    const mid = (lo + hi) / 2;
-    line1.style.fontSize = mid.toFixed(2) + "px";
-    // léger resserrement quand c'est petit
-    if (mid <= 24) line1.style.letterSpacing = "-0.02em";
-    else line1.style.letterSpacing = "";
-
-    if (measureWidth() <= allowed){
-      best = mid;
-      lo = mid;
-    } else {
-      hi = mid;
-    }
-  }
-
-  line1.style.fontSize = best.toFixed(2) + "px";
-  if (best <= 24) line1.style.letterSpacing = "-0.02em";
-  else line1.style.letterSpacing = "";
-  // On garde nowrap pour éviter tout retour à la ligne imprévisible selon l'appareil
-  line1.style.whiteSpace = "nowrap";
-}
-
-// Lance l'auto-fit après chaque rendu + après stabilisation layout/polices
-function scheduleFitLine1(){
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      fitLine1ToCircle();
-    });
-  });
-}
-
-// Refit quand l'écran change (orientation / resize)
-window.addEventListener("resize", () => scheduleFitLine1());
-
 const card = document.getElementById("card");
 const el = document.getElementById("content");
 
@@ -435,8 +292,6 @@ document.addEventListener("touchmove", (e) => {
 }, { passive: false });
 
 render();
-scheduleFitLine1();
-
     return null;
   }
   state.i = state.order[state.pos];
@@ -588,12 +443,107 @@ function render(){
     <div class="a-line1">${a1LineHTML}</div>
     ${a2LineHTML ? `<div class="a-line2">${a2LineHTML}</div>` : ""}
   `;
-  scheduleFitLine1();
-
 }
 
 
-// ===== Auto-fit robuste du contenu dans le cercle (toutes tailles d'écran) =====
+// ===== Auto-fit robuste de la LIGNE 1 dans le cercle (toutes tailles d'écran) =====
+// Objectif : la ligne 1 ne doit jamais dépasser le cercle, quel que soit l'appareil.
+// On calcule la largeur "permise" par la géométrie du cercle à la hauteur du texte, puis
+// on réduit la taille (binary search) jusqu'à ce que ça rentre.
+
+function __getLine1AndCircle(){
+  const circle = card.querySelector(".circle");
+  const line1 = el.querySelector(".q-line1, .a-line1");
+  return { circle, line1 };
+}
+
+function fitLine1ToCircle(){
+  const { circle, line1 } = __getLine1AndCircle();
+  if (!circle || !line1) return;
+
+  // Forcer nowrap sur la ligne 1 (au cas où)
+  line1.style.whiteSpace = "nowrap";
+
+  // Mesures cercle
+  const cRect = circle.getBoundingClientRect();
+  const cs = getComputedStyle(circle);
+  const border = parseFloat(cs.borderLeftWidth) || 0;
+
+  // padding en px (on prend le + grand des côtés)
+  const padL = parseFloat(cs.paddingLeft) || 0;
+  const padR = parseFloat(cs.paddingRight) || 0;
+  const padT = parseFloat(cs.paddingTop) || 0;
+  const padB = parseFloat(cs.paddingBottom) || 0;
+  const pad = Math.max(padL, padR, padT, padB);
+
+  // Rayon intérieur utile
+  const r = (Math.min(cRect.width, cRect.height) / 2) - border - pad;
+  if (!(r > 0)) return;
+
+  // Position verticale réelle de la ligne 1 (pour savoir la corde disponible)
+  // On centre le texte, donc dy est petit mais pas toujours 0 (différences de fonts/metrics).
+  const lRect0 = line1.getBoundingClientRect();
+  const cy = cRect.top + cRect.height / 2;
+  const midY = (lRect0.top + lRect0.bottom) / 2;
+  const dy = midY - cy;
+
+  // Si le centre du texte est trop haut/bas pour le cercle utile, on garde une marge stricte
+  const dyAbs = Math.min(Math.abs(dy), r * 0.95);
+
+  // Largeur de corde disponible à cette hauteur : 2*sqrt(r^2 - dy^2)
+  // SAFETY < 1 pour absorber les différences de rendu (iOS/Android/PC + gras + glyphes).
+  const SAFETY = 0.78;
+  const allowed = 2 * Math.sqrt(Math.max(0, r*r - dyAbs*dyAbs)) * SAFETY;
+
+  const measure = () => line1.getBoundingClientRect().width;
+
+  // Reset à la valeur CSS calculée
+  const cssSize = parseFloat(getComputedStyle(line1).fontSize) || 64;
+  line1.style.fontSize = cssSize + "px";
+  line1.style.letterSpacing = "";
+
+  if (measure() <= allowed) return;
+
+  // Binary search (descend la taille jusqu'à rentrer)
+  let lo = 12;
+  let hi = cssSize;
+  let best = lo;
+
+  for (let i = 0; i < 20; i++) {
+    const mid = (lo + hi) / 2;
+    line1.style.fontSize = mid.toFixed(2) + "px";
+
+    // petite compression si très petit (cas extrêmes)
+    if (mid <= 22) line1.style.letterSpacing = "-0.02em";
+    else line1.style.letterSpacing = "";
+
+    if (measure() <= allowed) {
+      best = mid;
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+
+  line1.style.fontSize = best.toFixed(2) + "px";
+  if (best <= 22) line1.style.letterSpacing = "-0.02em";
+  else line1.style.letterSpacing = "";
+}
+
+// Double RAF : attend que le layout/les fonts soient stabilisés (surtout iOS/PWA)
+function scheduleFit(){
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fitLine1ToCircle();
+    });
+  });
+}
+
+// Refit au chargement + changements d'orientation/dimension
+window.addEventListener("load", scheduleFit);
+window.addEventListener("resize", scheduleFit);
+window.addEventListener("orientationchange", scheduleFit);
+
 
 
 async function handleTap(){
@@ -605,8 +555,6 @@ async function handleTap(){
       startSession();
       state.mode = "question";
       render();
-scheduleFitLine1();
-
       return;
     }
 
@@ -614,8 +562,6 @@ scheduleFitLine1();
       await playTransitionQA();
       state.mode = "answer";
       render();
-scheduleFitLine1();
-
       return;
     }
 
@@ -623,7 +569,6 @@ scheduleFitLine1();
     if (nxt === null) return;
     state.mode = "question";
     render();
-scheduleFitLine1();
 
   } finally {
     setTimeout(() => {
@@ -673,4 +618,3 @@ card.addEventListener("click", (e) => {
   handleTap().catch(console.error);
 }, { passive: false });
 render();
-scheduleFitLine1();
