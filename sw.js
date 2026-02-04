@@ -1,12 +1,11 @@
-// sw.js — FINAL
-const CACHE = "intervalles-cache-v103";
+const CACHE = "intervalles-cache-v104";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
-  "./assets/accueil.png",
+  "./data.json",  "./assets/accueil.png",
   "./favicon.ico",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -14,7 +13,7 @@ const ASSETS = [
   "./icons/apple-touch-icon-167.png",
   "./icons/apple-touch-icon-152.png",
   "./icons/apple-touch-icon-120.png",
-  "./icons/favicon-32.png"
+  "./icons/favicon-32.png",
 ];
 
 self.addEventListener("install", (e) => {
@@ -30,5 +29,7 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  e.respondWith(caches.match(e.request).then(cached => cached || fetch(e.request)));
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
 });
