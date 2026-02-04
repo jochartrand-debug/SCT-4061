@@ -632,3 +632,7 @@ body{
 
 /* Pour éviter que clip-path casse le rendu sur certains navigateurs, on force un contexte de rendu */
 .card.question #content{ will-change: transform; }
+
+:root{
+  --q-circle-safe: 50px;
+}
