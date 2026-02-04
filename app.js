@@ -32,15 +32,51 @@ const DATA = [
     "a2": ""
   },
 {
-    "q1": "Quantité",
-    "q2": "de matière",
-    "a1": "Masse",
+    "q1": "Constitue",
+    "q2": "le réel",
+    "a1": "Atomes +",
+    "a2": "Vide"
+  },
+{
+    "q1": "Constitue",
+    "q2": "la matière",
+    "a1": "Atomes",
     "a2": ""
   },
 {
-    "q1": "Qualité",
-    "q2": "particulière",
-    "a1": "Charge",
+    "q1": "Constitue",
+    "q2": "les atomes",
+    "a1": "Particules",
+    "a2": ""
+  },
+{
+    "q1": "Noyau",
+    "q2": "atomique",
+    "a1": "Proton +",
+    "a2": "Neutrons"
+  },
+{
+    "q1": "Déplacement",
+    "q2": "d'électron",
+    "a1": "Électricité",
+    "a2": ""
+  },
+{
+    "q1": "Particule chargée",
+    "q2": "négative",
+    "a1": "Électron",
+    "a2": ""
+  },
+{
+    "q1": "Particule chargée",
+    "q2": "positive",
+    "a1": "Proton",
+    "a2": ""
+  },
+{
+    "q1": "Particule",
+    "q2": "neutre",
+    "a1": "Neutron",
     "a2": ""
   },
 {
@@ -50,20 +86,20 @@ const DATA = [
     "a2": ""
   },
 {
-    "q1": "3 600 coulombs",
-    "q2": "(3 600 C)",
+    "q1": "3 600",
+    "q2": "coulombs",
     "a1": "1  ampère-heure",
     "a2": "(1 Ah)"
   },
 {
-    "q1": "3 600 joules",
-    "q2": "(3 600 J)",
+    "q1": "3 600",
+    "q2": "joules",
     "a1": "1  watt-heure",
     "a2": "(1 Wh)"
   },
 {
-    "q1": "3 600 secondes",
-    "q2": "(3 600 s)",
+    "q1": "3 600",
+    "q2": "secondes",
     "a1": "1  heure",
     "a2": "(1 h)"
   },
@@ -248,188 +284,122 @@ const DATA = [
   }
 ];
 
-const card = document.getElementById("card");
-const el = document.getElementById("content");
 
-// ===== SVG ring (question) + auto-fit (ligne 1 seulement) =====
-const RING_ID = "qring-svg";
+// =============================
+// Auto-fit ligne 1 dans un cercle (robuste PC/iOS/Android)
+// - Mesure réelle du texte rendu
+// - Calcule la largeur disponible (corde du cercle) à la hauteur de la ligne 1
+// - Ne touche jamais à la ligne 2
+// =============================
+function fitLine1ToCircle(){
+  const card = document.querySelector(".card.question, .card.answer");
+  if (!card) return;
 
-// Crée (une fois) le cercle SVG décoratif, centré dans .card
-function ensureQuestionRing(){
-  let svg = document.getElementById(RING_ID);
-  if (svg) return svg;
+  const circle = card.querySelector(".circle");
+  const line1 = card.querySelector(".q-line1, .a-line1");
+  if (!circle || !line1) return;
 
-  svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("id", RING_ID);
-  svg.setAttribute("class", "qring");
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  // Force une seule ligne (pas de wrap)
+  const prevWS = line1.style.whiteSpace;
+  line1.style.whiteSpace = "nowrap";
 
-  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  c.setAttribute("cx", "50");
-  c.setAttribute("cy", "50");
-  // r = 50 - stroke/2 en coordonnées viewBox ; le stroke est en CSS avec vector-effect
-  c.setAttribute("r", "49");
-  svg.appendChild(c);
-
-  // On le met dans la carte, derrière le contenu
-  card.style.position = card.style.position || "relative";
-  card.insertBefore(svg, card.firstChild);
-  return svg;
-}
-
-function showQuestionRing(show){
-  const svg = ensureQuestionRing();
-  svg.style.display = show ? "block" : "none";
-}
-
-// Utilitaires
-function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
-
-// On ajuste UNIQUEMENT la ligne 1 pour qu'elle tienne dans le cercle intérieur sûr.
-// La ligne 2 n'est jamais modifiée.
-function fitLine1ToRing(){
-  showQuestionRing(state.mode === "question");
-
-  if (state.mode === "home") return;
-
-  const line1 = el.querySelector(".q-line1, .a-line1");
-  if (!line1) return;
-
-  // Reset styles
+  // Reset (on repart de la taille CSS)
+  const prevSize = line1.style.fontSize;
+  const prevLS = line1.style.letterSpacing;
   line1.style.fontSize = "";
   line1.style.letterSpacing = "";
 
-  // IMPORTANT: #content est clip-path (masque) en CSS.
-  // Si on mesure le texte alors qu'il est clippé, le navigateur peut retourner des rects "coupés",
-  // ce qui fait croire que ça rentre alors que non. On désactive temporairement le clip pendant le fit.
-  const prevClip = el.style.clipPath;
-  el.style.clipPath = "none";
+  // Lire la géométrie
+  const cRect = circle.getBoundingClientRect();
+  if (!cRect.width || !cRect.height){
+    line1.style.whiteSpace = prevWS;
+    return;
+  }
 
-  // Le fitting est utile surtout en mode question (cercle), mais on peut aussi l'appliquer en réponse
-  // si tu souhaites garder une cohérence visuelle.
-  const ring = document.getElementById(RING_ID);
-  if (!ring || ring.style.display === "none") { el.style.clipPath = prevClip; return; }
+  const cs = getComputedStyle(circle);
+  const border = parseFloat(cs.borderLeftWidth) || 0;
+  const padL = parseFloat(cs.paddingLeft) || 0;
+  const padR = parseFloat(cs.paddingRight) || 0;
 
-  const ringRect = ring.getBoundingClientRect();
-  const cx = ringRect.left + ringRect.width / 2;
-  const cy = ringRect.top  + ringRect.height / 2;
+  // Rayon utile (on enlève border + padding)
+  const r = (Math.min(cRect.width, cRect.height) / 2) - border - Math.max(padL, padR);
+  if (!(r > 0)){
+    line1.style.whiteSpace = prevWS;
+    return;
+  }
 
-  // Rayon intérieur "sûr" = demi-diamètre - stroke - safe padding (cohérent avec le CSS clip-path)
-  const styles = getComputedStyle(document.documentElement);
-  const stroke = parseFloat(styles.getPropertyValue("--q-circle-stroke")) || 6;
-  const safe = parseFloat(styles.getPropertyValue("--q-circle-safe")) || 12;
-  const r = (Math.min(ringRect.width, ringRect.height) / 2) - stroke - safe;
+  const cx = cRect.left + cRect.width / 2;
+  const cy = cRect.top + cRect.height / 2;
 
-  if (!(r > 0)) { el.style.clipPath = prevClip; return; }
+  // dy = distance verticale entre le centre du cercle et le milieu de la ligne 1
+  const lRect0 = line1.getBoundingClientRect();
+  const midY = (lRect0.top + lRect0.bottom) / 2;
+  const dy = midY - cy;
 
-  // Test: la ligne 1 doit tenir dans le cercle à 3 hauteurs (haut/milieu/bas)
-  const getUnionRect = (root) => {
-    // Mesure fiable de la "vraie" boîte du texte rendu (inclut les noeuds texte),
-    // via Range.getClientRects() (fonctionne sur desktop + iOS).
-    const range = document.createRange();
-    range.selectNodeContents(root);
+  // Largeur dispo = corde du cercle à cette hauteur (avec marge de sécurité)
+  const SAFETY = 0.92; // descendre vers 0.88 si tu veux encore plus conservateur
+  if (Math.abs(dy) >= r){
+    line1.style.whiteSpace = prevWS;
+    return;
+  }
+  const allowed = 2 * Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
 
-    const rects = Array.from(range.getClientRects());
-    // Fallback: si aucun rect (élément vide), on prend le rect du conteneur
-    if (!rects.length){
-      return root.getBoundingClientRect();
-    }
+  // Mesure réelle du texte
+  const measureWidth = () => line1.getBoundingClientRect().width;
 
-    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
-    for (const r of rects){
-      if (!r.width && !r.height) continue;
-      left = Math.min(left, r.left);
-      top = Math.min(top, r.top);
-      right = Math.max(right, r.right);
-      bottom = Math.max(bottom, r.bottom);
-    }
+  // Taille courante (px) selon CSS
+  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 0;
+  if (!startPx){
+    line1.style.whiteSpace = prevWS;
+    return;
+  }
 
-    if (left === Infinity){
-      return root.getBoundingClientRect();
-    }
+  // Si ça rentre déjà, on sort (avec une mini marge visuelle optionnelle)
+  // (On évite les effets "pire" : on ne fait rien si c'est déjà OK.)
+  if (measureWidth() <= allowed){
+    line1.style.whiteSpace = prevWS;
+    return;
+  }
 
-    return { left, top, right, bottom, width: right - left, height: bottom - top };
-  };
-
-  const fits = () => {
-    const rect = getUnionRect(line1);
-
-    // demi-largeur (autour du centre)
-    const halfW = Math.max(Math.abs(rect.left - cx), Math.abs(rect.right - cx));
-
-    // 3 hauteurs de test
-    const ys = [rect.top + 1, (rect.top + rect.bottom)/2, rect.bottom - 1];
-
-    // Marge anti-aliasing
-    const SAFETY = 0.78;
-
-    for (const y of ys){
-      const dy = y - cy;
-      if (Math.abs(dy) >= r) return false;
-      const allowed = Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
-      if (halfW > allowed) return false;
-    }
-    return true;
-  };
-
-  if (fits()) { el.style.clipPath = prevClip; return; }
-
-  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
+  // Binary search sur la font-size
   let lo = 10, hi = startPx, best = lo;
-
-  for (let iter = 0; iter < 14; iter++){
+  for (let i = 0; i < 16; i++){
     const mid = (lo + hi) / 2;
     line1.style.fontSize = mid.toFixed(2) + "px";
-    if (fits()){
+    // léger resserrement quand c'est petit
+    if (mid <= 24) line1.style.letterSpacing = "-0.02em";
+    else line1.style.letterSpacing = "";
+
+    if (measureWidth() <= allowed){
       best = mid;
       lo = mid;
-    }else{
+    } else {
       hi = mid;
     }
   }
 
   line1.style.fontSize = best.toFixed(2) + "px";
+  if (best <= 24) line1.style.letterSpacing = "-0.02em";
+  else line1.style.letterSpacing = "";
 
-  // Garantie anti-clipping: si ça ne fit pas encore (différences sub-pixel), on descend par petits pas.
-  // (Toujours sans toucher à la ligne 2.)
-  let guard = best;
-  while (!fits() && guard > 8){
-    guard -= 0.5;
-    line1.style.fontSize = guard.toFixed(2) + "px";
-  }
-
-  if (guard <= 24) line1.style.letterSpacing = "-0.02em";
-
-  el.style.clipPath = prevClip;
+  // Restore white-space (garde nowrap si tu préfères)
+  line1.style.whiteSpace = prevWS;
 }
 
-let __fitScheduled = false;
-function scheduleFit(){
-  if (__fitScheduled) return;
-  __fitScheduled = true;
-
-  const run = () => {
-    __fitScheduled = false;
-    fitLine1ToRing();
-  };
-
-  // Double rAF: DOM + layout + polices
-  requestAnimationFrame(() => requestAnimationFrame(run));
-  if (document.fonts && document.fonts.ready){
-    document.fonts.ready.then(() => {
-      requestAnimationFrame(() => requestAnimationFrame(run));
-    }).catch(() => {});
-  }
+// Lance l'auto-fit après chaque rendu + après stabilisation layout/polices
+function scheduleFitLine1(){
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fitLine1ToCircle();
+    });
+  });
 }
 
-ensureQuestionRing();
-showQuestionRing(false);
+// Refit quand l'écran change (orientation / resize)
+window.addEventListener("resize", () => scheduleFitLine1());
 
-window.addEventListener("resize", () => {
-  if (state.mode !== "home") scheduleFit();
-}, { passive: true });
-
+const card = document.getElementById("card");
+const el = document.getElementById("content");
 
 const state = {
   mode: "home", // "home" | "question" | "answer"
@@ -472,6 +442,8 @@ document.addEventListener("touchmove", (e) => {
 }, { passive: false });
 
 render();
+scheduleFitLine1();
+
     return null;
   }
   state.i = state.order[state.pos];
@@ -623,8 +595,8 @@ function render(){
     <div class="a-line1">${a1LineHTML}</div>
     ${a2LineHTML ? `<div class="a-line2">${a2LineHTML}</div>` : ""}
   `;
-  scheduleFit();
-  return;
+  scheduleFitLine1();
+
 }
 
 
@@ -640,6 +612,8 @@ async function handleTap(){
       startSession();
       state.mode = "question";
       render();
+scheduleFitLine1();
+
       return;
     }
 
@@ -647,6 +621,8 @@ async function handleTap(){
       await playTransitionQA();
       state.mode = "answer";
       render();
+scheduleFitLine1();
+
       return;
     }
 
@@ -654,6 +630,7 @@ async function handleTap(){
     if (nxt === null) return;
     state.mode = "question";
     render();
+scheduleFitLine1();
 
   } finally {
     setTimeout(() => {
@@ -703,3 +680,4 @@ card.addEventListener("click", (e) => {
   handleTap().catch(console.error);
 }, { passive: false });
 render();
+scheduleFitLine1();

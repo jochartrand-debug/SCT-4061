@@ -132,7 +132,7 @@ body{
   border-radius: 50%;
   display: grid;
   place-items: center;
-  overflow: visible;
+  overflow: hidden;
   padding: 2.5%;
 }
 
@@ -586,49 +586,3 @@ body{
 
 /* ===== a1_html: agrandit uniquement les réponses HTML (+10%) ===== */
 .a1html{ font-size: 1.25em; }
-
-
-
-/* ===== SVG QUESTION RING (final) =====
-   - Cercle dessiné en SVG (anti-aliasing stable)
-   - Contenu "masqué" (clip) dans un cercle intérieur sûr
-   - Le JS ajuste seulement la taille de la ligne 1, la ligne 2 n'est jamais modifiée
-*/
-:root{
-  --q-circle-size: var(--question-circle-size);
-  --q-circle-stroke: 6px;
-  --q-circle-safe: 20px; /* marge intérieure (évite que les glyphes touchent le trait) */
-}
-
-/* Désactive l'ancien cercle décoratif en ::before (on utilise le SVG à la place) */
-.card.question::before{ content:none !important; display:none !important; }
-
-/* SVG du cercle (injecté par app.js) */
-.qring{
-  position:absolute;
-  left:50%;
-  top:50%;
-  width: var(--q-circle-size);
-  height: var(--q-circle-size);
-  transform: translate(-50%, -50%);
-  pointer-events:none;
-  z-index:0;
-}
-.qring circle{
-  fill: none;
-  stroke: #fff;
-  stroke-width: var(--q-circle-stroke);
-  vector-effect: non-scaling-stroke;
-}
-
-/* Le contenu doit rester au-dessus du cercle */
-.card.question #content{ position:relative; z-index:1; }
-
-/* Masque (clip) du contenu DANS un cercle intérieur sûr.
-   Important: on clip le conteneur complet, mais le JS n'ajuste que la ligne 1. */
-.card.question #content{
-  clip-path: circle(calc((var(--q-circle-size) / 2) - var(--q-circle-stroke) - var(--q-circle-safe)) at 50% 50%);
-}
-
-/* Pour éviter que clip-path casse le rendu sur certains navigateurs, on force un contexte de rendu */
-.card.question #content{ will-change: transform; }
