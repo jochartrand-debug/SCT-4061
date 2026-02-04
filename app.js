@@ -331,7 +331,7 @@ function fitLine1ToCircle(){
   const dy = midY - cy;
 
   // Largeur dispo = corde du cercle à cette hauteur (avec marge de sécurité)
-  const SAFETY = 0.88; // descendre vers 0.88 si tu veux encore plus conservateur
+  const SAFETY = 0.76; // descendre vers 0.88 si tu veux encore plus conservateur
   if (Math.abs(dy) >= r){
     line1.style.whiteSpace = prevWS;
     return;
