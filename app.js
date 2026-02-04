@@ -32,15 +32,45 @@ const DATA = [
     "a2": ""
   },
 {
-    "q1": "Quantité",
-    "q2": "de matière",
-    "a1": "Masse",
+    "q1": "Constitue",
+    "q2": "la matière",
+    "a1": "Atomes",
     "a2": ""
   },
 {
-    "q1": "Qualité",
-    "q2": "particulière",
-    "a1": "Charge",
+    "q1": "Constitue",
+    "q2": "les atomes",
+    "a1": "Particules",
+    "a2": ""
+  },
+{
+    "q1": "Noyau",
+    "q2": "atomique",
+    "a1": "Proton",
+    "a2": "et neutrons"
+  },
+{
+    "q1": "Déplacement",
+    "q2": "d'électron",
+    "a1": "Électricité",
+    "a2": ""
+  },
+{
+    "q1": "Particule",
+    "q2": "négative",
+    "a1": "Électron",
+    "a2": ""
+  },
+{
+    "q1": "Particule",
+    "q2": "positive",
+    "a1": "Proton",
+    "a2": ""
+  },
+{
+    "q1": "Particule",
+    "q2": "neutre",
+    "a1": "Neutron",
     "a2": ""
   },
 {
@@ -50,20 +80,20 @@ const DATA = [
     "a2": ""
   },
 {
-    "q1": "3 600 coulombs",
-    "q2": "(3 600 C)",
+    "q1": "3 600",
+    "q2": "coulombs",
     "a1": "1  ampère-heure",
     "a2": "(1 Ah)"
   },
 {
-    "q1": "3 600 joules",
-    "q2": "(3 600 J)",
+    "q1": "3 600",
+    "q2": "joules",
     "a1": "1  watt-heure",
     "a2": "(1 Wh)"
   },
 {
-    "q1": "3 600 secondes",
-    "q2": "(3 600 s)",
+    "q1": "3 600",
+    "q2": "secondes",
     "a1": "1  heure",
     "a2": "(1 h)"
   },
