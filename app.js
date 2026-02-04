@@ -386,20 +386,22 @@ function fitLine1ToRing(){
   const fits = () => {
     const rect = getUnionRect(line1);
 
-    // demi-largeur (autour du centre)
-    const halfW = Math.max(Math.abs(rect.left - cx), Math.abs(rect.right - cx));
+    // On évalue la largeur dispo du cercle à 3 hauteurs (haut/milieu/bas)
+    const ys = [rect.top + 1, (rect.top + rect.bottom) / 2, rect.bottom - 1];
 
-    // 3 hauteurs de test
-    const ys = [rect.top + 1, (rect.top + rect.bottom)/2, rect.bottom - 1];
+    // Marge anti-aliasing / accents
+    const SAFETY = 0.92;
 
-    // Marge anti-aliasing
-    const SAFETY = 0.78;
-
-    for (const y of ys){
+    for (const y of ys) {
       const dy = y - cy;
       if (Math.abs(dy) >= r) return false;
-      const allowed = Math.sqrt(Math.max(0, r*r - dy*dy)) * SAFETY;
-      if (halfW > allowed) return false;
+
+      // largeur horizontale disponible dans un cercle à la hauteur y:
+      const allowedHalf = Math.sqrt(Math.max(0, r * r - dy * dy));
+      const allowedWidth = 2 * allowedHalf * SAFETY;
+
+      // largeur réelle du texte rendu (non clippé)
+      if (rect.width > allowedWidth) return false;
     }
     return true;
   };
