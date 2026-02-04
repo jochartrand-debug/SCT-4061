@@ -82,20 +82,20 @@ const DATA = [
 {
     "q1": "3 600",
     "q2": "coulombs",
-    "a1": "1  ampère-heure",
-    "a2": "(1 Ah)"
+    "a1": "1  Ah",
+    "a2": ""
   },
 {
     "q1": "3 600",
     "q2": "joules",
-    "a1": "1  watt-heure",
-    "a2": "(1 Wh)"
+    "a1": "1  Wh",
+    "a2": ""
   },
 {
     "q1": "3 600",
     "q2": "secondes",
-    "a1": "1  heure",
-    "a2": "(1 h)"
+    "a1": "1  h",
+    "a2": ""
   },
 {
     "q1": "kilo",
