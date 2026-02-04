@@ -87,6 +87,12 @@ const DATA = [
   },
 {
     "q1": "3 600",
+    "q2": "kilojoules",
+    "a1": "1  kWh",
+    "a2": ""
+  },
+  {
+    "q1": "3 600",
     "q2": "joules",
     "a1": "1  Wh",
     "a2": ""
@@ -185,6 +191,18 @@ const DATA = [
     "q1": "coulomb/seconde",
     "q2": "",
     "a1": "ampère",
+    "a2_html": ""
+  },
+   {
+    "q1": "J/C",
+    "q2": "",
+    "a1": "V",
+    "a2_html": ""
+  },
+  {
+    "q1": "joule/coulomb",
+    "q2": "",
+    "a1": "volt",
     "a2_html": ""
   },
 {
@@ -561,6 +579,7 @@ const oneLineUnits = new Set([
   "kg/s",
   "m³/s",
   "j/s",
+  "j/c",
 ]);
 
 if (oneLineUnits.has(t)) {
