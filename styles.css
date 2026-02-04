@@ -351,7 +351,7 @@ body::before{
 /* + d’air entre la ligne 1 et la ligne 2 (question & réponse) */
 .q-line1,
 .a-line1{
-  margin-bottom: 0.5em;  /* ajuste: 0.4em → 0.6em selon ton goût */
+  margin-bottom: 0.4em;  /* ajuste: 0.4em → 0.6em selon ton goût */
 }
 
 .q-line2,
