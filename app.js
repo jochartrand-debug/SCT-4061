@@ -46,7 +46,7 @@ const DATA = [
 {
     "q1": "Noyau",
     "q2": "atomique",
-    "a1": "Proton",
+    "a1": "Protons",
     "a2": "et neutrons"
   },
 {
