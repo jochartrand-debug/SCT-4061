@@ -196,8 +196,8 @@ const DATA = [
    {
     "q1": "J/C",
     "q2": "",
-    "a1": "V",
-    "a2_html": ""
+    "a1": "Potentiel électrique",
+    "a2": "(V)"
   },
   {
     "q1": "joule/coulomb",
