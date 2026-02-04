@@ -575,27 +575,39 @@ if (oneLineUnits.has(t)) {
     return `<span class="frac"><span class="num qb">${esc(parts[0].trim())}</span><span class="bar"></span><span class="den qb">${esc(parts[1].trim())}</span></span>`;
   }
 
-  // Sinon: mots en gras, opérateurs × ÷ - non gras, sans ajouter d'espaces
+  // Sinon: mots en gras, opérateurs × ÷ - non gras
+  // On veut des espaces AUTOUR de × et ÷, mais sans les mettre en gras.
+  // Donc: on normalise d'abord pour enlever les espaces autour des opérateurs,
+  // puis on injecte des espaces insécables autour de l'opérateur rendu.
+  const txt2 = txt
+    .replace(/\s*×\s*/g, "×")
+    .replace(/\s*÷\s*/g, "÷");
+
   let out = "";
   let buf = "";
   const flush = () => {
-    if(buf){
+    if (buf) {
       out += `<span class="qb">${esc(buf)}</span>`;
       buf = "";
     }
   };
 
-  for(let i=0;i<txt.length;i++){
-    const ch = txt[i];
-    if(ch === "×" || ch === "÷" || ch === "-"){
+  for (let i = 0; i < txt2.length; i++) {
+    const ch = txt2[i];
+    if (ch === "×" || ch === "÷" || ch === "-") {
       flush();
-      out += `<span class="op${ch==="-" ? " hyph":""}">${ch}</span>`;
-    }else{
+      if (ch === "×" || ch === "÷") {
+        // Espaces insécables pour éviter un retour à la ligne autour de l'opérateur
+        out += `<span class="op">&nbsp;${ch}&nbsp;</span>`;
+      } else {
+        out += `<span class="op hyph">-</span>`;
+      }
+    } else {
       buf += ch;
     }
   }
   flush();
-  return out || `<span class="qb">${esc(txt)}</span>`;
+  return out || `<span class="qb">${esc(txt2)}</span>`;
 }
 
 

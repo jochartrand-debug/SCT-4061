@@ -347,3 +347,15 @@ body::before{
   stroke-width: var(--q-circle-stroke);
   vector-effect: non-scaling-stroke;
 }
+
+/* + d’air entre la ligne 1 et la ligne 2 (question & réponse) */
+.q-line1,
+.a-line1{
+  margin-bottom: 0.5em;  /* ajuste: 0.4em → 0.6em selon ton goût */
+}
+
+.q-line2,
+.a-line2{
+  margin-top: 0;        /* on évite de doubler les marges */
+}
+
