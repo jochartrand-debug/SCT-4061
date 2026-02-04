@@ -330,6 +330,7 @@ function fitLine1ToRing(){
   // Reset styles
   line1.style.fontSize = "";
   line1.style.letterSpacing = "";
+  line1.style.transform = "";
 
   // IMPORTANT: #content est clip-path (masque) en CSS.
   // Si on mesure le texte alors qu'il est clippé, le navigateur peut retourner des rects "coupés",
@@ -389,18 +390,17 @@ function fitLine1ToRing(){
     // On évalue la largeur dispo du cercle à 3 hauteurs (haut/milieu/bas)
     const ys = [rect.top + 1, (rect.top + rect.bottom) / 2, rect.bottom - 1];
 
-    // Marge anti-aliasing / accents
+    // marge anti-aliasing / accents
     const SAFETY = 0.92;
 
-    for (const y of ys) {
+    for (const y of ys){
       const dy = y - cy;
       if (Math.abs(dy) >= r) return false;
 
-      // largeur horizontale disponible dans un cercle à la hauteur y:
-      const allowedHalf = Math.sqrt(Math.max(0, r * r - dy * dy));
+      // largeur horizontale disponible dans le cercle à la hauteur y
+      const allowedHalf = Math.sqrt(Math.max(0, r*r - dy*dy));
       const allowedWidth = 2 * allowedHalf * SAFETY;
 
-      // largeur réelle du texte rendu (non clippé)
       if (rect.width > allowedWidth) return false;
     }
     return true;
@@ -408,31 +408,55 @@ function fitLine1ToRing(){
 
   if (fits()) { el.style.clipPath = prevClip; return; }
 
-  const startPx = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
-  let lo = 10, hi = startPx, best = lo;
+  // Ajustement : on réduit la taille de police en fonction de la largeur horizontale disponible
+  // dans le cercle à la hauteur du texte (robuste sur iOS / PWA).
+  let fs = parseFloat(getComputedStyle(line1).fontSize || "0") || 64;
 
-  for (let iter = 0; iter < 14; iter++){
-    const mid = (lo + hi) / 2;
-    line1.style.fontSize = mid.toFixed(2) + "px";
-    if (fits()){
-      best = mid;
-      lo = mid;
-    }else{
-      hi = mid;
+  // On centre optiquement la ligne 1 sur le cercle (utile si le conteneur #content n'a pas exactement le même centre).
+  const centerLine1 = () => {
+    const rect = getUnionRect(line1);
+    const midX = (rect.left + rect.right) / 2;
+    const dx = cx - midX;
+    line1.style.transform = `translateX(${dx.toFixed(2)}px)`;
+  };
+
+  for (let iter = 0; iter < 10; iter++){
+    const rect = getUnionRect(line1);
+    if (!rect.width) break;
+
+    const ys = [rect.top + 1, (rect.top + rect.bottom) / 2, rect.bottom - 1];
+    const SAFETY = 0.92;
+
+    let scale = 1;
+    for (const y of ys){
+      const dy = y - cy;
+      if (Math.abs(dy) >= r) { scale = Math.min(scale, 0.8); continue; }
+      const allowedHalf = Math.sqrt(Math.max(0, r*r - dy*dy));
+      const allowedWidth = 2 * allowedHalf * SAFETY;
+      scale = Math.min(scale, allowedWidth / rect.width);
     }
+
+    if (scale >= 1) break;
+
+    fs = Math.max(8, fs * scale);
+    line1.style.fontSize = fs.toFixed(2) + "px";
   }
 
-  line1.style.fontSize = best.toFixed(2) + "px";
+  // Dernière passe : centrage X + garde anti-clipping subpixel
+  centerLine1();
 
-  // Garantie anti-clipping: si ça ne fit pas encore (différences sub-pixel), on descend par petits pas.
-  // (Toujours sans toucher à la ligne 2.)
-  let guard = best;
-  while (!fits() && guard > 8){
-    guard -= 0.5;
-    line1.style.fontSize = guard.toFixed(2) + "px";
+  if (!fits() && fs > 8){
+    // On baisse par petits pas si les arrondis subpixel laissent encore un léger débordement
+    let guard = fs;
+    while (!fits() && guard > 8){
+      guard -= 0.5;
+      line1.style.fontSize = guard.toFixed(2) + "px";
+    }
+    fs = guard;
+    centerLine1();
   }
 
-  if (guard <= 24) line1.style.letterSpacing = "-0.02em";
+  if (fs <= 24) line1.style.letterSpacing = "-0.02em";
 
   el.style.clipPath = prevClip;
 }
