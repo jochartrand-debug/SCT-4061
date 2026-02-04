@@ -586,3 +586,10 @@ body{
 
 /* ===== a1_html: agrandit uniquement les réponses HTML (+10%) ===== */
 .a1html{ font-size: 1.25em; }
+
+.q-line2, .a-line2 {
+  display: inline-block;
+  line-height: 1.1;
+  padding-bottom: 0.08em;
+}
+
