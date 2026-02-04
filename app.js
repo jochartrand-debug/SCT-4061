@@ -197,7 +197,7 @@ const DATA = [
     "q1": "m/s",
     "q2": "",
     "a1": "Vitesse",
-    "a2_html": ""
+    "a2_html": "(<span class=\"italic\">v</span>)"
   },
 {
     "q1": "m³/s",
