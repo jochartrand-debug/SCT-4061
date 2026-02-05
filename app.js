@@ -173,12 +173,18 @@ const DATA = [
     "q1": "volt",
     "q2": "(V)",
     "a1": "Tension",
-    "a2_html": "(<span class=\"italic\">T</span>)"
+    "a2_html": "(<span class=\"italic\">U</span>)"
   },
   {
     "q1": "volt × ampère",
     "q2": "",
     "a1": "watt",
+    "a2_html": ""
+  },
+   {
+    "q1": "ohm × ampère",
+    "q2": "",
+    "a1": "volt",
     "a2_html": ""
   },
   {
@@ -187,17 +193,35 @@ const DATA = [
     "a1": "Wh",
     "a2_html": ""
   },
+  {
+    "q1": "volt/ampère",
+    "q2": "",
+    "a1": "ohm",
+    "a2_html": ""
+  },
+  {
+    "q1": "volt/ohm",
+    "q2": "",
+    "a1": "ampère",
+    "a2_html": ""
+  },
 {
     "q1": "coulomb/seconde",
     "q2": "",
     "a1": "ampère",
     "a2_html": ""
   },
+    {
+    "q1": "Potentiel",
+    "q2": "",
+    "a1": "Tension",
+    "a2": ""
+  },
    {
     "q1": "J/C",
     "q2": "",
-    "a1": "Potentiel",
-    "a2": "(V)"
+    "a1": "Tension",
+    "a2": ""
   },
   {
     "q1": "joule/coulomb",
@@ -214,8 +238,8 @@ const DATA = [
 {
     "q1": "m/s",
     "q2": "",
-    "a1": "Vitesse",
-    "a2_html": "(<span class=\"italic\">v</span>)"
+    "a1": "Débit",
+    "a2": "de longueur"
   },
 {
     "q1": "m³/s",
