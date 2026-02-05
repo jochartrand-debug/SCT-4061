@@ -226,8 +226,8 @@ const DATA = [
    {
     "q1": "J/C",
     "q2": "",
-    "a1": "Énergie par unité",
-    "a2": "de charge (Tension)"
+    "a1": "Tension",
+    "a2": ""
   },
   {
     "q1": "joule/coulomb",
