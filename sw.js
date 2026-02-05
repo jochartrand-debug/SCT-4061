@@ -1,4 +1,4 @@
-const CACHE = "intervalles-cache-v201";
+const CACHE = "intervalles-cache-v202";
 const ASSETS = [
   "./",
   "./index.html",
