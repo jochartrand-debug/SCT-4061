@@ -211,6 +211,18 @@ const DATA = [
     "a1": "ampère",
     "a2_html": ""
   },
+    {
+    "q1": "N/C",
+    "q2": "",
+    "a1": "Champ",
+    "a2": "électrique"
+  },
+  {
+    "q1": "V/m",
+    "q2": "",
+    "a1": "Champ",
+    "a2": "électrique"
+  },
 {
     "q1": "coulomb/seconde",
     "q2": "",
