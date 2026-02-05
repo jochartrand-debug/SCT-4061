@@ -634,6 +634,8 @@ const oneLineUnits = new Set([
   "m³/s",
   "j/s",
   "j/c",
+  "n/c",
+  "v/m",
 ]);
 
 if (oneLineUnits.has(t)) {
