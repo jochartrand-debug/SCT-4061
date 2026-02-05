@@ -175,6 +175,12 @@ const DATA = [
     "a1": "Tension",
     "a2_html": "(<span class=\"italic\">U</span>)"
   },
+   {
+    "q1": "volt × ampère-heure",
+    "q2": "",
+    "a1": "watt-heure",
+    "a2_html": ""
+  },
   {
     "q1": "volt × ampère",
     "q2": "",
