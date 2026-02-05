@@ -219,15 +219,15 @@ const DATA = [
   },
     {
     "q1": "Potentiel",
-    "q2": "",
+    "q2": "électrique",
     "a1": "Tension",
     "a2": ""
   },
    {
     "q1": "J/C",
     "q2": "",
-    "a1": "Tension",
-    "a2": ""
+    "a1": "Énergie par unité",
+    "a2": "de charge (Tension)"
   },
   {
     "q1": "joule/coulomb",
