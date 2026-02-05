@@ -51,7 +51,7 @@ const DATA = [
   },
 {
     "q1": "Déplacement",
-    "q2": "d'électron",
+    "q2": "d'électrons",
     "a1": "Électricité",
     "a2": ""
   },
