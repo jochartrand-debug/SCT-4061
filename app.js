@@ -32,15 +32,21 @@ const DATA = [
     "a2": ""
   },
 {
-    "q1": "Constitue",
+    "q1": "Constituent",
     "q2": "la matière",
     "a1": "Atomes",
     "a2": ""
   },
 {
-    "q1": "Constitue",
+    "q1": "Constituent",
     "q2": "les atomes",
     "a1": "Particules",
+    "a2": "élémentaires"
+  },
+  {
+    "q1": "Périphérie",
+    "q2": "atomique",
+    "a1": "Électrons",
     "a2": ""
   },
 {
